@@ -1,32 +1,69 @@
-# React + TypeScript + Vite
+# 🍎 FruitWeb
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Website bán trái cây trực tuyến được xây dựng bằng React + TypeScript.
 
-Currently, two official plugins are available:
+## 📌 Giới thiệu
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+FruitWeb mô phỏng một website thương mại điện tử bán trái cây, hỗ trợ người dùng xem sản phẩm, tìm kiếm, giỏ hàng, yêu thích, đăng nhập và đặt hàng.
 
-## React Compiler
+Hiện tại dự án sử dụng **Mock Data + LocalStorage**, chưa tích hợp Backend và Database.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ✨ Chức năng
 
-## Expanding the Oxlint configuration
+- 🏠 Trang chủ
+- 🛍️ Danh sách và chi tiết sản phẩm
+- 🔎 Tìm kiếm, lọc và sắp xếp sản phẩm
+- 🛒 Giỏ hàng
+- ❤️ Danh sách yêu thích
+- 🔐 Đăng ký / Đăng nhập / Đăng xuất
+- 💳 Thanh toán và đặt hàng
+- 📦 Quản lý đơn hàng
+- 👤 Quản lý thông tin cá nhân
+- 👨‍💼 Admin Dashboard
+- 📱 Responsive trên Desktop, Tablet và Mobile
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## 🛠️ Công nghệ
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Axios
+- Lucide React
+- LocalStorage
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## 🚀 Cài đặt
+
+Clone project:
+
+```bash
+Cài đặt thư viện:
+
+npm install
+
+Chạy project:
+
+npm run dev
+
+Mở trình duyệt tại:
+
+👤 Tài khoản Demo
+
+User
+
+Email: user@freshfruit.com
+Password: 123456
+
+Admin
+
+Email: admin@freshfruit.com
+Password: 123456
+
+📌 Trạng thái
+
+Frontend: ✅ Hoàn thành
+Mock Authentication: ✅
+Mock Data: ✅
+Backend: ⏳ Chưa triển khai
+Database: ⏳ Chưa triển khai
