@@ -43,6 +43,13 @@ export const CategoryPage: React.FC = () => {
             src={category.image}
             alt={category.name}
             className="absolute inset-0 w-full h-full object-cover opacity-30"
+            onError={(e) => {
+              const target = e.currentTarget;
+              const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
+              if (!target.src.includes('1610832958506')) {
+                target.src = fallback;
+              }
+            }}
           />
         )}
         <div className="relative z-10 max-w-xl">

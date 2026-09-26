@@ -103,6 +103,13 @@ export const ProductDetail: React.FC = () => {
               src={product.image}
               alt={product.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.currentTarget;
+                const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
+                if (!target.src.includes('1610832958506')) {
+                  target.src = fallback;
+                }
+              }}
             />
             {hasDiscount && (
               <span className="absolute top-4 left-4 z-10 px-3 py-1 text-xs font-bold rounded-xl bg-rose-500 text-white shadow-md">

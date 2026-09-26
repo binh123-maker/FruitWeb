@@ -104,15 +104,15 @@ export const Footer: React.FC = () => {
           <ul className="flex flex-col gap-3 text-sm text-slate-400">
             <li className="flex items-start gap-2.5">
               <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-              <span>123 Nguyễn Thị Minh Khai, Quận 1, TP. Hồ Chí Minh</span>
+              <span>Thông tin đang cập nhập</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Hotline: 1900 6868 (8:00 - 21:00)</span>
+              <span>Hotline: Thông tin đang cập nhập</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Email: hotro@freshfruit.com</span>
+              <span>Email: Thông tin đang cập nhập</span>
             </li>
           </ul>
         </div>

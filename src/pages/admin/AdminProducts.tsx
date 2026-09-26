@@ -180,7 +180,18 @@ export const AdminProducts: React.FC = () => {
               {products.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50">
                   <td className="py-3 px-4 flex items-center gap-3">
-                    <img src={p.image} alt={p.name} className="w-10 h-10 rounded-lg object-cover bg-slate-50" />
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="w-10 h-10 rounded-lg object-cover bg-slate-50"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
+                        if (!target.src.includes('1610832958506')) {
+                          target.src = fallback;
+                        }
+                      }}
+                    />
                     <span className="font-bold text-slate-900">{p.name}</span>
                   </td>
                   <td className="py-3 px-4 text-slate-600">{p.categoryName || p.category}</td>

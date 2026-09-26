@@ -4,21 +4,67 @@ import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../mock/data';
 
 const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const DATA_VERSION = 'freshfruit_v2_images_fixed';
+
 const getStoredProducts = (): Product[] => {
   const existing = storage.getItem<Product[]>('freshfruit_products', []);
+  const syncedVersion = storage.getItem<string>('freshfruit_data_version', '');
+
   if (existing.length === 0) {
     storage.setItem('freshfruit_products', INITIAL_PRODUCTS);
+    storage.setItem('freshfruit_data_version', DATA_VERSION);
     return INITIAL_PRODUCTS;
   }
+
+  if (syncedVersion !== DATA_VERSION) {
+    const initialMap = new Map(INITIAL_PRODUCTS.map((p) => [p.id, p]));
+    const updated = existing.map((prod) => {
+      const match = initialMap.get(prod.id);
+      if (match) {
+        return {
+          ...prod,
+          image: match.image,
+        };
+      }
+      return prod;
+    });
+
+    storage.setItem('freshfruit_products', updated);
+    storage.setItem('freshfruit_data_version', DATA_VERSION);
+    return updated;
+  }
+
   return existing;
 };
 
 const getStoredCategories = (): Category[] => {
   const existing = storage.getItem<Category[]>('freshfruit_categories', []);
+  const syncedVersion = storage.getItem<string>('freshfruit_cat_version', '');
+
   if (existing.length === 0) {
     storage.setItem('freshfruit_categories', INITIAL_CATEGORIES);
+    storage.setItem('freshfruit_cat_version', DATA_VERSION);
     return INITIAL_CATEGORIES;
   }
+
+  if (syncedVersion !== DATA_VERSION) {
+    const initialMap = new Map(INITIAL_CATEGORIES.map((c) => [c.id, c]));
+    const updated = existing.map((cat) => {
+      const match = initialMap.get(cat.id);
+      if (match) {
+        return {
+          ...cat,
+          image: match.image,
+        };
+      }
+      return cat;
+    });
+
+    storage.setItem('freshfruit_categories', updated);
+    storage.setItem('freshfruit_cat_version', DATA_VERSION);
+    return updated;
+  }
+
   return existing;
 };
 

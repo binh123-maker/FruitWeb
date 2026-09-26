@@ -132,6 +132,13 @@ export const Orders: React.FC = () => {
                         src={item.productImage}
                         alt={item.productName}
                         className="w-10 h-10 rounded-lg object-cover bg-slate-50 border border-slate-100"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
+                          if (!target.src.includes('1610832958506')) {
+                            target.src = fallback;
+                          }
+                        }}
                       />
                       <span className="font-bold text-slate-800 line-clamp-1">{item.productName}</span>
                       <span className="text-slate-400">x{item.quantity}</span>
@@ -201,7 +208,18 @@ export const Orders: React.FC = () => {
                 {selectedOrder.items.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 border-b border-slate-100 last:border-b-0">
                     <div className="flex items-center gap-2.5">
-                      <img src={item.productImage} alt={item.productName} className="w-8 h-8 rounded object-cover" />
+                      <img
+                        src={item.productImage}
+                        alt={item.productName}
+                        className="w-8 h-8 rounded object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
+                          if (!target.src.includes('1610832958506')) {
+                            target.src = fallback;
+                          }
+                        }}
+                      />
                       <span className="font-bold text-slate-800">{item.productName}</span>
                       <span>x{item.quantity}</span>
                     </div>

@@ -129,6 +129,13 @@ export const Home: React.FC = () => {
                   src={cat.image}
                   alt={cat.name}
                   className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
+                    if (!target.src.includes('1610832958506')) {
+                      target.src = fallback;
+                    }
+                  }}
                 />
               </div>
               <div className="p-4 text-center">
@@ -180,7 +187,7 @@ export const Home: React.FC = () => {
           </div>
           <div className="w-full md:w-80 aspect-video md:aspect-square rounded-2xl overflow-hidden border-2 border-white/30 shadow-lg shrink-0">
             <img
-              src="https://images.unsplash.com/photo-1596368708380-e418557926c0?auto=format&fit=crop&w=600&q=80"
+              src="https://images.unsplash.com/photo-1596363505729-4190a9506133?auto=format&fit=crop&w=600&q=80"
               alt="Promo Grapes"
               className="w-full h-full object-cover"
             />

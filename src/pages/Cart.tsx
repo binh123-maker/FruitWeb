@@ -114,6 +114,13 @@ export const Cart: React.FC = () => {
                         src={item.product.image}
                         alt={item.product.name}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
+                          if (!target.src.includes('1610832958506')) {
+                            target.src = fallback;
+                          }
+                        }}
                       />
                     </Link>
 
