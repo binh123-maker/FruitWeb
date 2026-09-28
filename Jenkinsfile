@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        DOCKER_IMAGE = 'binh9325/fruitweb'
+    }
+
     stages {
 
         stage('Checkout') {
@@ -11,21 +15,52 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo 'Build Docker image for FruitWeb'
-                sh 'docker build -t fruitweb:jenkins .'
+                echo 'Building FruitWeb Docker image...'
+
+                sh '''
+                    docker build -t ${DOCKER_IMAGE}:latest .
+                '''
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                echo 'Logging in to Docker Hub...'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-cred',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    '''
+                }
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
+                echo 'Pushing FruitWeb image to Docker Hub...'
+
+                sh '''
+                    docker push ${DOCKER_IMAGE}:latest
+                '''
             }
         }
 
         stage('Docker Test') {
             steps {
-                echo 'Docker image built successfully'
+                echo 'FruitWeb Docker image pushed successfully!'
             }
         }
     }
 
     post {
         success {
-            echo 'FruitWeb CI completed successfully!'
+            echo 'FruitWeb CI - Build and Push completed successfully!'
         }
 
         failure {
