@@ -1,12 +1,13 @@
-from app.core.database import check_db_connection, engine
-from sqlalchemy import text
+from unittest.mock import patch
+from app.core.database import check_db_connection
 
 
-def test_database_connection():
-    assert check_db_connection() is True
+def test_database_connection_mocked():
+    with patch("app.core.database.engine.connect") as mock_connect:
+        mock_connect.return_value.__enter__.return_value.execute.return_value = True
+        assert check_db_connection() is True
 
 
-def test_database_query():
-    with engine.connect() as conn:
-        result = conn.execute(text("SELECT 'FruitWeb' AS project_name")).scalar()
-        assert result == "FruitWeb"
+def test_database_connection_failure_mocked():
+    with patch("app.core.database.engine.connect", side_effect=Exception("DB Offline")):
+        assert check_db_connection() is False

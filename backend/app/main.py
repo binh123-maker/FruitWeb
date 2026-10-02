@@ -4,8 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings
-from app.routers import health
+from app.routers import health, auth, categories, products
 from app.schemas.common import error_response
+
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -66,3 +67,7 @@ def root():
 
 # Include Routers
 app.include_router(health.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")
+app.include_router(categories.router, prefix="/api")
+app.include_router(products.router, prefix="/api")
+
