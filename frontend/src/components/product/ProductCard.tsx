@@ -56,7 +56,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </button>
 
       {/* Product Image */}
-      <Link to={`/products/${product.slug}`} className="relative block overflow-hidden bg-slate-50 pt-[100%]">
+      <Link to={`/products/${product.id}`} className="relative block overflow-hidden bg-slate-50 pt-[100%]">
         <img
           src={product.image}
           alt={product.name}
@@ -91,7 +91,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {/* Title */}
         <Link
-          to={`/products/${product.slug}`}
+          to={`/products/${product.id}`}
           className="font-bold text-slate-800 hover:text-emerald-600 text-base line-clamp-2 mb-2 transition-colors min-h-[2.75rem]"
         >
           {product.name}

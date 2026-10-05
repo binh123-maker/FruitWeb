@@ -46,6 +46,7 @@ export const Register: React.FC = () => {
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
+        confirmPassword: formData.confirmPassword,
       });
       showToast('Tạo tài khoản thành công! Tự động đăng nhập...', 'success');
       navigate('/');

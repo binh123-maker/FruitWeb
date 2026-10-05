@@ -109,7 +109,7 @@ export const Cart: React.FC = () => {
                       className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
                     />
 
-                    <Link to={`/products/${item.product.slug}`} className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
+                    <Link to={`/products/${item.product.id}`} className="w-20 h-20 rounded-xl overflow-hidden bg-slate-50 shrink-0 border border-slate-100">
                       <img
                         src={item.product.image}
                         alt={item.product.name}
@@ -126,7 +126,7 @@ export const Cart: React.FC = () => {
 
                     <div className="flex flex-col min-w-0">
                       <Link
-                        to={`/products/${item.product.slug}`}
+                        to={`/products/${item.product.id}`}
                         className="font-bold text-slate-800 hover:text-emerald-600 text-sm line-clamp-1 transition-colors"
                       >
                         {item.product.name}

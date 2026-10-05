@@ -1,215 +1,197 @@
 import { Product, Category, FilterOptions } from '../types';
-import { storage, STORAGE_KEYS } from '../utils/storage';
-import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../mock/data';
+import { productApi, ProductQueryParams, ProductCreatePayload, ProductUpdatePayload } from '../api/productApi';
+import { categoryApi } from '../api/categoryApi';
 
-const delay = (ms = 300) => new Promise((resolve) => setTimeout(resolve, ms));
+// Cache for category slug -> id mapping to avoid repeated calls
+let categoryCache: Category[] = [];
 
-const DATA_VERSION = 'freshfruit_v2_images_fixed';
-
-const getStoredProducts = (): Product[] => {
-  const existing = storage.getItem<Product[]>('freshfruit_products', []);
-  const syncedVersion = storage.getItem<string>('freshfruit_data_version', '');
-
-  if (existing.length === 0) {
-    storage.setItem('freshfruit_products', INITIAL_PRODUCTS);
-    storage.setItem('freshfruit_data_version', DATA_VERSION);
-    return INITIAL_PRODUCTS;
+async function getCategoryList(): Promise<Category[]> {
+  if (categoryCache.length === 0) {
+    categoryCache = await categoryApi.getCategories();
   }
+  return categoryCache;
+}
 
-  if (syncedVersion !== DATA_VERSION) {
-    const initialMap = new Map(INITIAL_PRODUCTS.map((p) => [p.id, p]));
-    const updated = existing.map((prod) => {
-      const match = initialMap.get(prod.id);
-      if (match) {
-        return {
-          ...prod,
-          image: match.image,
-        };
-      }
-      return prod;
-    });
-
-    storage.setItem('freshfruit_products', updated);
-    storage.setItem('freshfruit_data_version', DATA_VERSION);
-    return updated;
+async function resolveCategoryId(categorySlugOrId?: string): Promise<number | undefined> {
+  if (!categorySlugOrId) return undefined;
+  if (/^\d+$/.test(categorySlugOrId)) {
+    return parseInt(categorySlugOrId, 10);
   }
-
-  return existing;
-};
-
-const getStoredCategories = (): Category[] => {
-  const existing = storage.getItem<Category[]>('freshfruit_categories', []);
-  const syncedVersion = storage.getItem<string>('freshfruit_cat_version', '');
-
-  if (existing.length === 0) {
-    storage.setItem('freshfruit_categories', INITIAL_CATEGORIES);
-    storage.setItem('freshfruit_cat_version', DATA_VERSION);
-    return INITIAL_CATEGORIES;
-  }
-
-  if (syncedVersion !== DATA_VERSION) {
-    const initialMap = new Map(INITIAL_CATEGORIES.map((c) => [c.id, c]));
-    const updated = existing.map((cat) => {
-      const match = initialMap.get(cat.id);
-      if (match) {
-        return {
-          ...cat,
-          image: match.image,
-        };
-      }
-      return cat;
-    });
-
-    storage.setItem('freshfruit_categories', updated);
-    storage.setItem('freshfruit_cat_version', DATA_VERSION);
-    return updated;
-  }
-
-  return existing;
-};
+  const cats = await getCategoryList();
+  const found = cats.find((c) => c.slug.toLowerCase() === categorySlugOrId.toLowerCase());
+  return found ? parseInt(found.id, 10) : undefined;
+}
 
 export const productService = {
-  async getProducts(options: FilterOptions = {}): Promise<{ products: Product[]; total: number }> {
-    await delay(300);
-    let result = [...getStoredProducts()];
+  /**
+   * Fetch products with search, category filter, price bounds, sorting, pagination
+   */
+  async getProducts(options: FilterOptions = {}): Promise<{ products: Product[]; total: number; totalPages?: number; page?: number }> {
+    const params: ProductQueryParams = {};
 
-    if (options.category) {
-      result = result.filter((p) => p.category === options.category);
-    }
-
-    if (options.search) {
-      const q = options.search.toLowerCase().trim();
-      result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.origin.toLowerCase().includes(q) ||
-          (p.categoryName && p.categoryName.toLowerCase().includes(q))
-      );
-    }
-
-    if (options.minPrice !== undefined) {
-      result = result.filter((p) => (p.salePrice || p.price) >= options.minPrice!);
-    }
-
-    if (options.maxPrice !== undefined) {
-      result = result.filter((p) => (p.salePrice || p.price) <= options.maxPrice!);
-    }
-
-    if (options.isFeatured) {
-      result = result.filter((p) => p.isFeatured);
-    }
-
-    if (options.isBestSeller) {
-      result = result.filter((p) => p.isBestSeller);
-    }
-
-    if (options.isOrganic) {
-      result = result.filter((p) => p.isOrganic);
-    }
-
-    if (options.inStockOnly) {
-      result = result.filter((p) => p.stock > 0);
-    }
+    if (options.search) params.search = options.search.trim();
+    if (options.category) params.category = options.category;
+    if (options.minPrice !== undefined) params.min_price = options.minPrice;
+    if (options.maxPrice !== undefined) params.max_price = options.maxPrice;
+    if (options.isFeatured !== undefined) params.is_featured = options.isFeatured;
+    if (options.isBestSeller !== undefined) params.is_best_seller = options.isBestSeller;
 
     // Sorting
     if (options.sortBy) {
-      switch (options.sortBy) {
-        case 'price_asc':
-          result.sort((a, b) => (a.salePrice || a.price) - (b.salePrice || b.price));
-          break;
-        case 'price_desc':
-          result.sort((a, b) => (b.salePrice || b.price) - (a.salePrice || a.price));
-          break;
-        case 'newest':
-          result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          break;
-        case 'bestseller':
-          result.sort((a, b) => b.soldCount - a.soldCount);
-          break;
-        case 'rating':
-          result.sort((a, b) => b.rating - a.rating);
-          break;
+      params.sort = options.sortBy;
+    }
+
+    if (options.page !== undefined) params.page = options.page;
+    if (options.limit !== undefined) params.limit = options.limit;
+
+    try {
+      const res = await productApi.getProducts(params);
+      return {
+        products: res.products,
+        total: res.total,
+        totalPages: res.totalPages,
+        page: res.page,
+      };
+    } catch (err) {
+      console.error('Failed to fetch products from backend API:', err);
+      throw err;
+    }
+  },
+
+  /**
+   * Fetch a single product by numeric ID or slug
+   */
+  async getProductById(idOrSlug: string): Promise<Product | null> {
+    try {
+      if (/^\d+$/.test(idOrSlug)) {
+        return await productApi.getProductById(idOrSlug);
       }
+      // If a slug was passed, query products to match slug
+      const res = await productApi.getProducts({ limit: 100 });
+      return res.products.find((p) => p.slug.toLowerCase() === idOrSlug.toLowerCase()) || null;
+    } catch (err: any) {
+      if (err.status === 404 || err.status === 422) {
+        return null;
+      }
+      console.error('Failed to fetch product by id:', err);
+      throw err;
     }
-
-    const total = result.length;
-
-    if (options.page && options.limit) {
-      const start = (options.page - 1) * options.limit;
-      result = result.slice(start, start + options.limit);
-    }
-
-    return { products: result, total };
   },
 
-  async getProductById(id: string): Promise<Product | null> {
-    await delay(200);
-    const products = getStoredProducts();
-    return products.find((p) => p.id === id || p.slug === id) || null;
-  },
-
+  /**
+   * Fetch all active categories
+   */
   async getCategories(): Promise<Category[]> {
-    await delay(200);
-    return getStoredCategories();
+    try {
+      const cats = await categoryApi.getCategories(true);
+      categoryCache = cats;
+      return cats;
+    } catch (err) {
+      console.error('Failed to fetch categories from backend API:', err);
+      throw err;
+    }
   },
 
+  /**
+   * Fetch a single category by slug
+   */
   async getCategoryBySlug(slug: string): Promise<Category | null> {
-    await delay(200);
-    const categories = getStoredCategories();
-    return categories.find((c) => c.slug === slug) || null;
+    try {
+      const categories = await this.getCategories();
+      return categories.find((c) => c.slug.toLowerCase() === slug.toLowerCase()) || null;
+    } catch (err) {
+      console.error('Failed to fetch category by slug:', err);
+      throw err;
+    }
   },
 
+  /**
+   * Fetch featured products for home showcase
+   */
   async getFeaturedProducts(limit = 8): Promise<Product[]> {
-    await delay(250);
-    const products = getStoredProducts();
-    return products.filter((p) => p.isFeatured).slice(0, limit);
+    const res = await this.getProducts({ isFeatured: true, limit });
+    return res.products;
   },
 
+  /**
+   * Fetch best-selling products for home showcase
+   */
   async getBestSellers(limit = 8): Promise<Product[]> {
-    await delay(250);
-    const products = getStoredProducts();
-    return products.filter((p) => p.isBestSeller).slice(0, limit);
+    const res = await this.getProducts({ isBestSeller: true, limit });
+    return res.products;
   },
 
+  /**
+   * Fetch related products in the same category
+   */
   async getRelatedProducts(productId: string, category: string, limit = 4): Promise<Product[]> {
-    await delay(200);
-    const products = getStoredProducts();
-    return products
-      .filter((p) => p.category === category && p.id !== productId)
-      .slice(0, limit);
+    if (!category) return [];
+    const res = await this.getProducts({ category, limit: limit + 2 });
+    return res.products.filter((p) => p.id !== productId).slice(0, limit);
   },
 
-  // Admin Operations
+  /**
+   * Admin: Create a new product in the database
+   */
   async createProduct(data: Omit<Product, 'id' | 'createdAt'>): Promise<Product> {
-    await delay(400);
-    const products = getStoredProducts();
-    const newProduct: Product = {
-      ...data,
-      id: `p-${Date.now()}`,
-      createdAt: new Date().toISOString(),
+    const categoryId = await resolveCategoryId(data.category);
+
+    const payload: ProductCreatePayload = {
+      name: data.name,
+      slug: data.slug || undefined,
+      description: data.description || undefined,
+      price: data.price,
+      sale_price: data.salePrice !== undefined && data.salePrice > 0 ? data.salePrice : undefined,
+      image: data.image || undefined,
+      category_id: categoryId,
+      origin: data.origin || undefined,
+      unit: data.unit || 'kg',
+      stock: data.stock ?? 0,
+      rating: data.rating ?? 5.0,
+      review_count: data.reviewCount ?? 0,
+      sold_count: data.soldCount ?? 0,
+      is_featured: !!data.isFeatured,
+      is_best_seller: !!data.isBestSeller,
+      is_active: true,
     };
-    products.unshift(newProduct);
-    storage.setItem('freshfruit_products', products);
-    return newProduct;
+
+    return productApi.createProduct(payload);
   },
 
+  /**
+   * Admin: Update product details in the database
+   */
   async updateProduct(id: string, data: Partial<Product>): Promise<Product> {
-    await delay(400);
-    const products = getStoredProducts();
-    const index = products.findIndex((p) => p.id === id);
-    if (index === -1) throw new Error('Không tìm thấy sản phẩm!');
+    let categoryId: number | undefined;
+    if (data.category) {
+      categoryId = await resolveCategoryId(data.category);
+    }
 
-    const updated = { ...products[index], ...data };
-    products[index] = updated;
-    storage.setItem('freshfruit_products', products);
-    return updated;
+    const payload: ProductUpdatePayload = {
+      name: data.name,
+      slug: data.slug || undefined,
+      description: data.description,
+      price: data.price,
+      sale_price: data.salePrice !== undefined ? (data.salePrice > 0 ? data.salePrice : undefined) : undefined,
+      image: data.image,
+      category_id: categoryId,
+      origin: data.origin,
+      unit: data.unit,
+      stock: data.stock,
+      rating: data.rating,
+      review_count: data.reviewCount,
+      sold_count: data.soldCount,
+      is_featured: data.isFeatured,
+      is_best_seller: data.isBestSeller,
+    };
+
+    return productApi.updateProduct(id, payload);
   },
 
+  /**
+   * Admin: Delete product from database
+   */
   async deleteProduct(id: string): Promise<void> {
-    await delay(300);
-    const products = getStoredProducts();
-    const filtered = products.filter((p) => p.id !== id);
-    storage.setItem('freshfruit_products', filtered);
-  }
+    await productApi.deleteProduct(id);
+  },
 };

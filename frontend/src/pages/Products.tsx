@@ -123,7 +123,33 @@ export const Products: React.FC = () => {
               onAction={handleResetFilters}
             />
           ) : (
-            <ProductGrid products={products} isLoading={isLoading} />
+            <div className="flex flex-col gap-6">
+              <ProductGrid products={products} isLoading={isLoading} />
+
+              {Math.ceil(total / (filters.limit || 12)) > 1 && (
+                <div className="flex items-center justify-center gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(filters.page || 1) <= 1}
+                    onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
+                  >
+                    Trang trước
+                  </Button>
+                  <span className="text-xs font-bold text-slate-600 px-3 py-1.5 bg-white border border-slate-200 rounded-xl">
+                    Trang {filters.page || 1} / {Math.ceil(total / (filters.limit || 12))}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={(filters.page || 1) >= Math.ceil(total / (filters.limit || 12))}
+                    onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page || 1) + 1 }))}
+                  >
+                    Trang sau
+                  </Button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

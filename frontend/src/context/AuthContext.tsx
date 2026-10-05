@@ -8,7 +8,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAdmin: boolean;
   login: (email: string, pass: string) => Promise<User>;
-  register: (data: { name: string; email: string; phone: string; password: string }) => Promise<User>;
+  register: (data: { name: string; email: string; phone: string; password: string; confirmPassword?: string }) => Promise<User>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   addAddress: (data: Omit<Address, 'id'>) => Promise<Address[]>;

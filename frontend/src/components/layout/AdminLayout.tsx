@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
+  Layers,
   ShoppingBag,
   Users,
   LogOut,
@@ -19,6 +20,7 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const menuItems = [
     { label: 'Tổng quan', path: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { label: 'Danh mục', path: '/admin/categories', icon: <Layers className="w-5 h-5" /> },
     { label: 'Sản phẩm', path: '/admin/products', icon: <Package className="w-5 h-5" /> },
     { label: 'Đơn hàng', path: '/admin/orders', icon: <ShoppingBag className="w-5 h-5" /> },
     { label: 'Khách hàng', path: '/admin/users', icon: <Users className="w-5 h-5" /> },

@@ -37,9 +37,9 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = (quickEmail: string) => {
+  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
     setEmail(quickEmail);
-    setPassword('123456');
+    setPassword(quickPass);
   };
 
   return (
@@ -60,7 +60,7 @@ export const Login: React.FC = () => {
             label="Địa chỉ Email"
             type="email"
             required
-            placeholder="admin@freshfruit.com hoặc user@freshfruit.com"
+            placeholder="admin@fruitweb.com hoặc user1@fruitweb.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -105,7 +105,7 @@ export const Login: React.FC = () => {
           <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
-              onClick={() => handleQuickLogin('user@freshfruit.com')}
+              onClick={() => handleQuickLogin('user1@fruitweb.com', 'Password123!')}
               className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:border-emerald-200 transition-all cursor-pointer"
             >
               <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
@@ -114,7 +114,7 @@ export const Login: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => handleQuickLogin('admin@freshfruit.com')}
+              onClick={() => handleQuickLogin('admin@fruitweb.com', 'AdminPassword123!')}
               className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />

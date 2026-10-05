@@ -18,6 +18,7 @@ export const AdminProducts: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -98,6 +99,7 @@ export const AdminProducts: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, {
@@ -120,6 +122,8 @@ export const AdminProducts: React.FC = () => {
       fetchProducts();
     } catch (err: any) {
       showToast(err.message || 'Lỗi lưu sản phẩm', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,6 +249,7 @@ export const AdminProducts: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 className="bg-slate-50 border border-slate-200 rounded-xl p-2.5"
               >
+                {categories.length === 0 && <option value="">-- Chọn danh mục --</option>}
                 {categories.map((c) => (
                   <option key={c.id} value={c.slug}>{c.name}</option>
                 ))}
@@ -311,7 +316,7 @@ export const AdminProducts: React.FC = () => {
             </label>
           </div>
 
-          <Button type="submit" variant="primary" className="w-full mt-2">
+          <Button type="submit" variant="primary" isLoading={isSubmitting} className="w-full mt-2">
             Lưu Sản Phẩm
           </Button>
         </form>
