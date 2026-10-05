@@ -19,13 +19,13 @@ def register_user(db: Session, data: UserRegisterSchema) -> User:
     # Hash password
     hashed_pwd = security.hash_password(data.password)
 
-    # Create user
+    # Create user - public registration is strictly USER
     user = User(
         email=data.email.lower(),
         password_hash=hashed_pwd,
         full_name=data.full_name,
         phone=data.phone,
-        role=data.role if data.role in [UserRole.USER.value, UserRole.ADMIN.value] else UserRole.USER.value,
+        role=UserRole.USER.value,
         is_active=True,
     )
 

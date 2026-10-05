@@ -9,7 +9,6 @@ class UserRegisterSchema(BaseModel):
     confirm_password: str = Field(..., description="Xác nhận mật khẩu")
     full_name: Optional[str] = Field(None, description="Họ và tên")
     phone: Optional[str] = Field(None, description="Số điện thoại")
-    role: Optional[str] = Field("USER", description="Vai trò: USER hoặc ADMIN")
 
     @field_validator("confirm_password")
     @classmethod
@@ -17,16 +16,6 @@ class UserRegisterSchema(BaseModel):
         if "password" in info.data and v != info.data["password"]:
             raise ValueError("Mật khẩu xác nhận không khớp")
         return v
-
-    @field_validator("role")
-    @classmethod
-    def validate_role(cls, v: Optional[str]) -> str:
-        if v:
-            v_upper = v.upper()
-            if v_upper not in ["USER", "ADMIN"]:
-                raise ValueError("Role phải là USER hoặc ADMIN")
-            return v_upper
-        return "USER"
 
 
 class UserLoginSchema(BaseModel):
