@@ -1,0 +1,17 @@
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+.pytest_cache
+.coverage
+htmlcov
+.env
+.env.*
+!.env.example
+*.log
+alembic.log
+.git
+.gitignore

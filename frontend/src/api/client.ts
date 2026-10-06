@@ -4,7 +4,7 @@
  * Token refresh queue, and consistent HTTP error parsing.
  */
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/+$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
 
 export const TOKEN_KEYS = {
   ACCESS_TOKEN: 'freshfruit_access_token',
