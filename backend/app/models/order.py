@@ -13,6 +13,12 @@ class Order(Base):
     )
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
     total_amount: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
+    subtotal: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    discount_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0.00, nullable=True)
+    coupon_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    customer_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    payment_method: Mapped[str] = mapped_column(String(50), default="COD", nullable=True)
     shipping_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
