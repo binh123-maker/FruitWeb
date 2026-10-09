@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Package,
@@ -9,14 +9,12 @@ import {
   LogOut,
   ArrowLeft,
   Leaf,
-  ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const menuItems = [
     { label: 'Tổng quan', path: '/admin', icon: <LayoutDashboard className="w-5 h-5" /> },

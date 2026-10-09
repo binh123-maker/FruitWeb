@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, Link, Navigate } from 'react-router-dom';
 import { Order } from '../types';
 import { Button } from '../components/common/Button';
-import { CheckCircle2, Package, ShoppingBag, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Package, ShoppingBag } from 'lucide-react';
 
 export const OrderSuccess: React.FC = () => {
   const location = useLocation();

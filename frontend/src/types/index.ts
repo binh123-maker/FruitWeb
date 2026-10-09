@@ -1,5 +1,13 @@
 export type UserRole = 'USER' | 'ADMIN';
-export type OrderStatus = 'Chờ xác nhận' | 'Đã xác nhận' | 'Đang giao' | 'Đã giao' | 'Đã hủy';
+export type BackendOrderStatus = 'pending' | 'confirmed' | 'shipping' | 'delivered' | 'cancelled';
+export type OrderStatus =
+  | 'Chờ xác nhận'
+  | 'Đã xác nhận'
+  | 'Đang giao'
+  | 'Đã giao'
+  | 'Đã hủy'
+  | BackendOrderStatus;
+
 export type PaymentMethod = 'COD' | 'ONLINE_MOCK';
 export type PaymentStatus = 'Chưa thanh toán' | 'Đã thanh toán';
 
@@ -23,6 +31,7 @@ export interface User {
   avatar?: string;
   status: 'ACTIVE' | 'BLOCKED';
   createdAt: string;
+  updatedAt?: string;
   addresses?: Address[];
 }
 
@@ -59,18 +68,23 @@ export interface Product {
 }
 
 export interface CartItem {
+  id?: number; // Backend CartItem id
   product: Product;
   quantity: number;
   selected?: boolean;
+  unitPrice?: number;
+  subtotal?: number;
 }
 
 export interface OrderItem {
+  id?: number;
   productId: string;
   productName: string;
   productImage: string;
   price: number;
   quantity: number;
   unit: string;
+  subtotal?: number;
 }
 
 export interface Order {
@@ -78,7 +92,7 @@ export interface Order {
   userId: string;
   customerName: string;
   customerPhone: string;
-  customerEmail: string;
+  customerEmail?: string;
   shippingAddress: string;
   items: OrderItem[];
   subtotal: number;
@@ -88,6 +102,7 @@ export interface Order {
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   orderStatus: OrderStatus;
+  rawStatus?: BackendOrderStatus;
   couponCode?: string;
   note?: string;
   createdAt: string;
@@ -95,12 +110,16 @@ export interface Order {
 }
 
 export interface Coupon {
+  id?: number;
   code: string;
-  type: 'PERCENT' | 'FIXED';
+  type: 'PERCENT' | 'FIXED' | 'percentage' | 'fixed';
   value: number; // e.g., 10 for 10%, 50000 for 50k VND
   minSpend: number;
+  maxDiscount?: number;
   description: string;
-  expiryDate: string;
+  expiryDate?: string;
+  usageLimit?: number;
+  usageCount?: number;
   isActive: boolean;
 }
 

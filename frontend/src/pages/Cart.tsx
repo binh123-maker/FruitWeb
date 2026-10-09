@@ -3,9 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { QuantitySelector } from '../components/product/QuantitySelector';
 import { Button } from '../components/common/Button';
-import { Input } from '../components/common/Input';
 import { EmptyState } from '../components/common/EmptyState';
-import { Trash2, Tag, ArrowRight, ArrowLeft, ShoppingBag, ShieldCheck, Check } from 'lucide-react';
+import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { Trash2, Tag, ArrowRight, ArrowLeft, ShoppingBag } from 'lucide-react';
 
 export const Cart: React.FC = () => {
   const {
@@ -15,6 +15,7 @@ export const Cart: React.FC = () => {
     appliedCoupon,
     discountAmount,
     total,
+    isLoading,
     updateQuantity,
     removeFromCart,
     toggleSelect,
@@ -37,12 +38,20 @@ export const Cart: React.FC = () => {
     try {
       await applyCoupon(couponInput.trim());
       setCouponInput('');
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Error is notified via useToast in CartContext
     } finally {
       setIsApplyingCoupon(false);
     }
   };
+
+  if (isLoading && cart.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-16 flex justify-center">
+        <LoadingSpinner label="Đang tải giỏ hàng..." />
+      </div>
+    );
+  }
 
   if (cart.length === 0) {
     return (
@@ -90,13 +99,13 @@ export const Cart: React.FC = () => {
           {/* Items */}
           <div className="flex flex-col gap-3">
             {cart.map((item) => {
-              const currentPrice = item.product.salePrice || item.product.price;
-              const itemTotal = currentPrice * item.quantity;
+              const currentPrice = item.unitPrice ?? (item.product.salePrice || item.product.price);
+              const itemTotal = item.subtotal ?? (currentPrice * item.quantity);
               const isSelected = item.selected !== false;
 
               return (
                 <div
-                  key={item.product.id}
+                  key={item.id ? `cart-${item.id}` : `prod-${item.product.id}`}
                   className={`bg-white p-4 sm:p-5 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs ${
                     isSelected ? 'border-slate-200' : 'border-slate-100 opacity-60'
                   }`}
@@ -132,7 +141,7 @@ export const Cart: React.FC = () => {
                         {item.product.name}
                       </Link>
                       <span className="text-xs text-slate-400 mt-0.5">
-                        Đơn vị: {item.product.unit} | Xuất xứ: {item.product.origin}
+                        Đơn vị: {item.product.unit} | Tồn kho: {item.product.stock}
                       </span>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm font-extrabold text-emerald-600">
@@ -196,7 +205,7 @@ export const Cart: React.FC = () => {
                     MÃ: {appliedCoupon.code}
                   </span>
                   <span className="text-[11px] text-emerald-600">
-                    -{discountAmount.toLocaleString('vi-VN')} VNĐ
+                    -{discountAmount.toLocaleString('vi-VN')} VNĐ ({appliedCoupon.description})
                   </span>
                 </div>
                 <button
@@ -210,7 +219,7 @@ export const Cart: React.FC = () => {
               <form onSubmit={handleApplyCouponSubmit} className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Nhập FRESH10 hoặc WELCOME50"
+                  placeholder="Nhập mã giảm giá..."
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value)}
                   className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs uppercase font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
@@ -227,7 +236,7 @@ export const Cart: React.FC = () => {
             )}
 
             <div className="text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-xl">
-              💡 Thử dùng mã: <strong className="text-emerald-700">FRESH10</strong> (Giảm 10%) hoặc <strong className="text-emerald-700">WELCOME50</strong> (Giảm 50k).
+              💡 Mã giảm giá được kiểm tra và tính toán giảm trực tiếp từ hệ thống backend.
             </div>
           </div>
 
@@ -255,7 +264,7 @@ export const Cart: React.FC = () => {
 
             {discountAmount > 0 && (
               <div className="flex items-center justify-between text-sm text-rose-600">
-                <span>Giảm giá</span>
+                <span>Giảm giá (Coupon)</span>
                 <span className="font-bold">-{discountAmount.toLocaleString('vi-VN')}đ</span>
               </div>
             )}
@@ -266,7 +275,7 @@ export const Cart: React.FC = () => {
                 <span className="text-2xl font-black text-emerald-600">
                   {total.toLocaleString('vi-VN')}đ
                 </span>
-                <span className="text-[10px] text-slate-400 block">(Đã bao gồm VAT)</span>
+                <span className="text-[10px] text-slate-400 block">(Giá tính từ máy chủ)</span>
               </div>
             </div>
 

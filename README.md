@@ -33,7 +33,7 @@ Nginx Reverse Proxy (:80)
 
 ## ✨ 2. Trạng thái và tính năng dự án
 
-### ✅ Các tính năng đã hoàn thành (Phase 7 – Phase 10)
+### ✅ Các tính năng đã hoàn thành (Phase 7 – Phase 11)
 - **Phase 7 (Backend Production Readiness & Security Hardening)**:
   - Cấu hình môi trường an toàn (`DEBUG=false`, bắt buộc khóa JWT tối thiểu 32 ký tự trên production).
   - CORS strict per environment, chuẩn hóa xử lý lỗi thống nhất `ApiResponse`.
@@ -46,20 +46,49 @@ Nginx Reverse Proxy (:80)
   - Nginx reverse proxy định tuyến `/api` tới backend và phục vụ SPA frontend.
   - Sử dụng volume PostgreSQL `fruitweb_pgdata` bảo toàn dữ liệu.
 - **Phase 10 (Backend Cart, Orders, Coupons & Admin User Management)**:
-  - **Cart API**: Xem giỏ hàng, thêm sản phẩm, cập nhật số lượng, xóa từng món, làm trống giỏ hàng. Đảm bảo tính toán giá server-side và kiểm tra tồn kho.
+  - **Cart API**: Xem giỏ hàng, thêm sản phẩm, cập nhật số lượng, xóa từng món, làm trống giỏ hàng. Tính toán giá server-side và kiểm tra tồn kho.
   - **Orders API**: Đặt hàng (từ giỏ hàng hoặc danh sách mặt hàng), tính tiền server-side, trừ tồn kho trong transaction an toàn, xem lịch sử đơn, chi tiết đơn, hủy đơn (hoàn trả tồn kho), Admin xem toàn bộ và cập nhật trạng thái đơn hàng.
   - **Coupons API**: Admin tạo/quản lý mã giảm giá (percentage, fixed amount, hạn sử dụng, giới hạn lượt dùng, đơn hàng tối thiểu, mức giảm tối đa). User kiểm tra và áp dụng mã giảm giá.
   - **Admin User Management API**: Admin xem danh sách người dùng (phân trang, tìm kiếm), xem chi tiết, đổi vai trò (USER ↔ ADMIN), khóa/mở khóa tài khoản. Bảo vệ chống tự hạ quyền hoặc khóa tài khoản của chính mình và bảo vệ Admin cuối cùng.
+- **Phase 11 (Frontend Integration: Cart, Orders, Coupons & Admin Users)**:
+  - **Cart Frontend**: Giỏ hàng kết nối trực tiếp với backend qua `/api/cart`. Đồng bộ thêm, sửa số lượng, xóa sản phẩm và làm trống giỏ hàng theo thời gian thực.
+  - **Coupons Frontend**: Nhập mã giảm giá tại Giỏ hàng và Trang Thanh toán, gọi trực tiếp `POST /api/coupons/validate` để xác thực và áp dụng số tiền giảm phía server.
+  - **Orders Frontend**: Trang thanh toán `/checkout` gửi thông tin đơn hàng tới `POST /api/orders`, giỏ hàng tự động làm trống sau khi đặt hàng thành công. Trang `/orders` hiển thị lịch sử đơn hàng, xem chi tiết modal và hủy đơn khi đơn ở trạng thái `pending`.
+  - **Admin User Management Frontend**: Trang `/admin/users` hỗ trợ tìm kiếm, lọc theo vai trò (USER/ADMIN), lọc trạng thái (Active/Blocked), phân trang, xem chi tiết, đổi quyền vai trò và khóa/mở khóa tài khoản có hộp thoại xác nhận và bảo vệ an toàn.
+  - **Admin Orders Frontend**: Trang `/admin/orders` quản lý toàn bộ đơn hàng hệ thống, phân trang, lọc theo trạng thái, chuyển đổi trạng thái đơn hàng theo đúng state machine của backend.
 
-### ⏳ Tính năng chưa triển khai / Kế hoạch tiếp theo
-- **Phase 11**: Kết nối giao diện Frontend với Cart, Checkout/Orders, Coupons và Admin User Management.
-- Tích hợp cổng thanh toán trực tuyến (VNPAY / MoMo / ZaloPay).
-- Hệ thống gửi email thông báo đơn hàng tự động.
-- Triển khai hạ tầng Cloud (Oracle Cloud / AWS).
+### ⏳ Giới hạn hiện tại / Kế hoạch tiếp theo
+- **Cổng thanh toán trực tuyến**: Hiện tại hệ thống hỗ trợ phương thức đặt hàng thanh toán khi nhận hàng (COD). Tùy chọn thanh toán trực tuyến là chế độ mô phỏng đặt trước và chưa tích hợp cổng thanh toán bên thứ ba (VNPAY / MoMo / ZaloPay).
+- **Email Service**: Chưa cấu hình SMTP/dịch vụ gửi email thông báo hóa đơn tự động.
+- **Triển khai Cloud**: Triển khai hạ tầng Cloud phân tán (Oracle Cloud / AWS).
 
 ---
 
-## 📡 3. Danh sách REST API Endpoints
+## 🌐 3. Danh sách Frontend Routes
+
+| Đường dẫn (Route) | Quyền truy cập | Mô tả |
+|---|---|---|
+| `/` | Public | Trang chủ giới thiệu sản phẩm nổi bật, danh mục |
+| `/products` | Public | Danh sách sản phẩm, bộ lọc giá, tìm kiếm, phân trang |
+| `/products/:id` | Public | Chi tiết sản phẩm, chọn số lượng, thêm vào giỏ |
+| `/categories/:slug` | Public | Xem sản phẩm theo danh mục |
+| `/search` | Public | Kết quả tìm kiếm sản phẩm theo từ khóa |
+| `/cart` | Public / Customer | Giỏ hàng, cập nhật số lượng, xóa món, áp dụng coupon |
+| `/checkout` | Authenticated | Điền thông tin giao hàng, chọn thanh toán, đặt đơn |
+| `/order-success` | Authenticated | Thông báo đặt hàng thành công và mã đơn hàng |
+| `/orders` | Authenticated | Lịch sử đơn hàng, chi tiết đơn hàng, hủy đơn |
+| `/profile` | Authenticated | Quản lý thông tin tài khoản và địa chỉ giao hàng |
+| `/login` | Public | Đăng nhập tài khoản |
+| `/register` | Public | Đăng ký tài khoản mới |
+| `/admin` | ADMIN | Dashboard thống kê tổng quan doanh thu, đơn hàng |
+| `/admin/products` | ADMIN | Quản lý danh sách, tạo mới, chỉnh sửa, xóa sản phẩm |
+| `/admin/categories` | ADMIN | Quản lý danh mục sản phẩm |
+| `/admin/orders` | ADMIN | Quản lý đơn hàng toàn hệ thống, chuyển trạng thái |
+| `/admin/users` | ADMIN | Quản lý người dùng, phân quyền, khóa/mở khóa tài khoản |
+
+---
+
+## 📡 4. Danh sách REST API Endpoints
 
 ### 🩺 Health & System
 | Method | Endpoint | Quyền | Mô tả |
@@ -109,7 +138,7 @@ Nginx Reverse Proxy (:80)
 | `GET` | `/api/orders/{id}` | Authenticated | Xem chi tiết đơn hàng của người dùng hiện tại |
 | `PUT` | `/api/orders/{id}/cancel` | Authenticated | Hủy đơn hàng (hoàn lại tồn kho và lượt coupon) |
 | `GET` | `/api/orders/admin/all` | ADMIN | Xem toàn bộ đơn hàng hệ thống (phân trang, lọc status) |
-| `PUT` | `/api/orders/admin/{id}/status` | ADMIN | Cập nhật trạng thái đơn (pending → confirmed → shipped → delivered / cancelled) |
+| `PUT` | `/api/orders/admin/{id}/status` | ADMIN | Cập nhật trạng thái đơn (pending → confirmed → shipping → delivered / cancelled) |
 
 ### 🎟️ Coupons (`/api/coupons`)
 | Method | Endpoint | Quyền | Mô tả |
@@ -131,11 +160,12 @@ Nginx Reverse Proxy (:80)
 
 ---
 
-## ⚙️ 4. Cấu hình môi trường (Environment Variables)
+## ⚙️ 5. Cấu hình môi trường (Environment Variables)
 
 Dự án cung cấp mẫu cấu hình chuẩn:
 - Root: `.env.example`
 - Backend: `backend/.env.example`
+- Frontend: `frontend/.env.example`
 
 ### Thiết lập tệp `.env` tại thư mục gốc:
 ```bash
@@ -165,7 +195,7 @@ VITE_API_URL=
 
 ---
 
-## 🚀 5. Hướng dẫn chạy dự án
+## 🚀 6. Hướng dẫn chạy dự án
 
 ### Cách 1: Chạy bằng Docker Compose (Khuyến nghị cho Production / Demo)
 
@@ -222,7 +252,7 @@ Truy cập Frontend dev server tại: `http://localhost:5173`.
 
 ---
 
-## 🗄️ 6. Quản lý Migration cơ sở dữ liệu (Alembic)
+## 🗄️ 7. Quản lý Migration cơ sở dữ liệu (Alembic)
 
 Alembic quản lý lịch sử schema database trong thư mục `backend/alembic`:
 
@@ -254,7 +284,14 @@ Alembic quản lý lịch sử schema database trong thư mục `backend/alembic
 
 ---
 
-## 🧪 7. Kiểm thử và Kiểm tra chất lượng (Testing & Build)
+## 🧪 8. Kiểm thử và Kiểm tra chất lượng (Testing & Build)
+
+### Kiểm tra Build Frontend
+```bash
+cd frontend
+npm run build
+```
+Đảm bảo TypeScript biên dịch không lỗi (`tsc -b`) và Vite tạo bundle thành công.
 
 ### Chạy Backend Test Suite
 Suite kiểm thử tự động sử dụng SQLite in-memory độc lập, hoàn toàn không ảnh hưởng đến PostgreSQL:
@@ -264,27 +301,20 @@ cd backend
 pytest -v
 
 # Hoặc bên trong container Docker backend:
-docker compose exec backend pytest -v
+docker compose exec backend pytest -q
 ```
-**Kết quả kiểm thử thực tế sau Phase 10:**
+**Kết quả kiểm thử thực tế:**
 - Tổng cộng: **72 passed**, 0 failed.
 - Bao gồm các bộ test: Auth, Categories, Products, Cart, Orders, Coupons, Admin User Management, Config & Security.
 
-### Kiểm tra Build Frontend
-```bash
-cd frontend
-npm run build
-```
-Đảm bảo TypeScript biên dịch không lỗi (`tsc -b`) và Vite tạo bundle thành công.
-
 ---
 
-## 🔒 8. Lưu ý bảo mật và bảo vệ dữ liệu
+## 🔒 9. Lưu ý bảo mật và bảo vệ dữ liệu
 
 1. **Volume bảo toàn dữ liệu:**
    Dữ liệu PostgreSQL được lưu trữ trong Docker named volume `fruitweb_pgdata`. Không chạy `docker compose down -v` hoặc `docker volume rm fruitweb_pgdata`.
 2. **Bảo vệ mật khẩu:**
-   Mọi mật khẩu người dùng đều được băm bằng thuật toán `bcrypt` trước khi lưu vào database. API quản trị tuyệt đối không trả về chuỗi hash mật khẩu.
+   Mọi mật khẩu người dùng đều được băm bằng thuật toán `bcrypt` trước khi lưu vào database. API và giao diện quản trị tuyệt đối không hiển thị chuỗi hash mật khẩu.
 3. **Tính toán server-side:**
    Giá sản phẩm, tổng tiền đơn hàng và giá trị giảm giá đều được truy vấn và tính toán trực tiếp trên server, không tin tưởng dữ liệu giá hoặc tổng tiền từ client.
 4. **Phân quyền và bảo vệ tài khoản:**
