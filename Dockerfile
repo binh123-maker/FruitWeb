@@ -5,7 +5,7 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-ARG VITE_USE_MOCK_DATA=false
+ARG VITE_USE_MOCK_DATA=true
 ARG VITE_API_URL=
 ENV VITE_USE_MOCK_DATA=$VITE_USE_MOCK_DATA
 ENV VITE_API_URL=$VITE_API_URL
@@ -28,7 +28,7 @@ RUN npm run build
 # =========================
 FROM nginx:alpine
 
-ARG NGINX_CONF=docker/nginx/nginx.conf
+ARG NGINX_CONF=docker/nginx/nginx.standalone.conf
 
 # Remove default nginx page
 RUN rm -rf /usr/share/nginx/html/*
