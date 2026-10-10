@@ -35,32 +35,34 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {/* Toast Overlay Container */}
-      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full px-4 pointer-events-none">
+      <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full px-4 pointer-events-none" aria-live="polite">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center justify-between gap-3 p-4 rounded-xl shadow-lg border text-sm font-medium transition-all transform duration-300 animate-slide-in ${
+            className={`pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-2xl shadow-xl backdrop-blur-md border text-xs sm:text-sm font-semibold transition-all transform duration-300 animate-slide-in ${
               toast.type === 'success'
-                ? 'bg-emerald-50 text-emerald-900 border-emerald-200'
+                ? 'bg-emerald-950/90 text-emerald-100 border-emerald-500/40 shadow-emerald-950/20'
                 : toast.type === 'error'
-                ? 'bg-rose-50 text-rose-900 border-rose-200'
+                ? 'bg-rose-950/90 text-rose-100 border-rose-500/40 shadow-rose-950/20'
                 : toast.type === 'warning'
-                ? 'bg-amber-50 text-amber-900 border-amber-200'
-                : 'bg-sky-50 text-sky-900 border-sky-200'
+                ? 'bg-amber-950/90 text-amber-100 border-amber-500/40 shadow-amber-950/20'
+                : 'bg-slate-950/90 text-slate-100 border-slate-700 shadow-slate-950/20'
             }`}
           >
-            <div className="flex items-center gap-2.5">
-              {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />}
-              {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />}
-              {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />}
-              {toast.type === 'info' && <Info className="w-5 h-5 text-sky-600 shrink-0" />}
-              <span>{toast.message}</span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+              {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />}
+              {toast.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+              {toast.type === 'info' && <Info className="w-4 h-4 text-sky-400 shrink-0" />}
+              <span className="truncate leading-snug">{toast.message}</span>
             </div>
             <button
+              type="button"
               onClick={() => removeToast(toast.id)}
-              className="text-slate-400 hover:text-slate-600 transition-colors shrink-0"
+              className="text-white/60 hover:text-white transition-colors shrink-0 p-1 cursor-pointer"
+              aria-label="Đóng thông báo"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}

@@ -93,7 +93,7 @@ def test_create_order_with_items_success(client, user_headers, db_session, apple
             {"product_id": apple_product.id, "quantity": 2},  # 2 * 90,000 = 180,000
             {"product_id": mango_product.id, "quantity": 1},  # 1 * 60,000 = 60,000
         ],
-        "shipping_address": "123 Đường Lê Lợi, Quận 1, TP.HCM",
+        "shipping_address": "Số 15, Thôn 3, Xã Phú Xuân, Đắk Lắk",
         "phone": "0901234567",
         "coupon_code": "GIAM20K",
         "payment_method": "COD",
@@ -102,6 +102,7 @@ def test_create_order_with_items_success(client, user_headers, db_session, apple
     assert res.status_code == 201
     data = res.json()
     assert data["status"] == "pending"
+    assert data["payment_status"] == "unpaid"
     # subtotal = 180,000 + 60,000 = 240,000
     assert data["subtotal"] == 240000.0
     # discount = 20,000
@@ -122,13 +123,46 @@ def test_create_order_with_items_success(client, user_headers, db_session, apple
     assert test_coupon.usage_count == 1
 
 
+def test_create_order_rejected_outside_phu_xuan(client, user_headers, apple_product):
+    payload = {
+        "items": [{"product_id": apple_product.id, "quantity": 1}],
+        "shipping_address": "123 Đường Lê Lợi, Quận 1, TP.HCM",
+        "payment_method": "COD",
+    }
+    res = client.post("/api/orders", json=payload, headers=user_headers)
+    assert res.status_code == 400
+    assert "Phú Xuân" in res.json()["message"] or "Phú Xuân" in str(res.json())
+
+
+def test_create_order_accepted_in_phu_xuan(client, user_headers, apple_product):
+    payload = {
+        "items": [{"product_id": apple_product.id, "quantity": 1}],
+        "shipping_address": "Số 34, Thôn 4, Xã Phú Xuân, Tỉnh Đắk Lắk",
+        "payment_method": "COD",
+    }
+    res = client.post("/api/orders", json=payload, headers=user_headers)
+    assert res.status_code == 201
+    assert res.json()["shipping_address"] == "Số 34, Thôn 4, Xã Phú Xuân, Tỉnh Đắk Lắk"
+
+
+def test_create_order_online_mock_payment_status(client, user_headers, apple_product):
+    payload = {
+        "items": [{"product_id": apple_product.id, "quantity": 1}],
+        "shipping_address": "Thôn 2, Xã Phú Xuân, Đắk Lắk",
+        "payment_method": "ONLINE_MOCK",
+    }
+    res = client.post("/api/orders", json=payload, headers=user_headers)
+    assert res.status_code == 201
+    assert res.json()["payment_status"] == "paid_mock"
+
+
 def test_create_order_from_cart(client, user_headers, apple_product):
     # Add item to cart first
     client.post("/api/cart/items", json={"product_id": apple_product.id, "quantity": 3}, headers=user_headers)
 
     # Place order without specifying items -> creates from cart
     payload = {
-        "shipping_address": "456 Nguyễn Huệ, Quận 1, TP.HCM",
+        "shipping_address": "Thôn 1, Xã Phú Xuân, Đắk Lắk",
     }
     res = client.post("/api/orders", json=payload, headers=user_headers)
     assert res.status_code == 201
@@ -146,7 +180,7 @@ def test_create_order_insufficient_stock(client, user_headers, apple_product):
         "items": [
             {"product_id": apple_product.id, "quantity": 999},
         ],
-        "shipping_address": "123 Đường Lê Lợi, TP.HCM",
+        "shipping_address": "Thôn 5, Xã Phú Xuân, Đắk Lắk",
     }
     res = client.post("/api/orders", json=payload, headers=user_headers)
     assert res.status_code == 400
@@ -154,10 +188,9 @@ def test_create_order_insufficient_stock(client, user_headers, apple_product):
 
 
 def test_get_user_orders_and_detail(client, user_headers, apple_product):
-    # Create order
     payload = {
         "items": [{"product_id": apple_product.id, "quantity": 1}],
-        "shipping_address": "123 Đường Lê Lợi, TP.HCM",
+        "shipping_address": "Thôn 6, Xã Phú Xuân, Đắk Lắk",
     }
     create_res = client.post("/api/orders", json=payload, headers=user_headers)
     order_id = create_res.json()["id"]
@@ -176,7 +209,7 @@ def test_get_user_orders_and_detail(client, user_headers, apple_product):
 def test_user_cannot_access_other_user_order(client, user_headers, other_user_headers, apple_product):
     payload = {
         "items": [{"product_id": apple_product.id, "quantity": 1}],
-        "shipping_address": "123 Đường Lê Lợi, TP.HCM",
+        "shipping_address": "Thôn 7, Xã Phú Xuân, Đắk Lắk",
     }
     create_res = client.post("/api/orders", json=payload, headers=user_headers)
     order_id = create_res.json()["id"]
@@ -190,7 +223,7 @@ def test_cancel_order_restores_stock(client, user_headers, db_session, apple_pro
     initial_stock = apple_product.stock
     payload = {
         "items": [{"product_id": apple_product.id, "quantity": 2}],
-        "shipping_address": "123 Đường Lê Lợi, TP.HCM",
+        "shipping_address": "Thôn 8, Xã Phú Xuân, Đắk Lắk",
         "coupon_code": "GIAM20K",
     }
     create_res = client.post("/api/orders", json=payload, headers=user_headers)
@@ -214,7 +247,7 @@ def test_cancel_order_restores_stock(client, user_headers, db_session, apple_pro
 def test_admin_get_and_update_order_status(client, user_headers, admin_headers, apple_product):
     payload = {
         "items": [{"product_id": apple_product.id, "quantity": 1}],
-        "shipping_address": "123 Đường Lê Lợi, TP.HCM",
+        "shipping_address": "Thôn 9, Xã Phú Xuân, Đắk Lắk",
     }
     create_res = client.post("/api/orders", json=payload, headers=user_headers)
     order_id = create_res.json()["id"]
@@ -232,6 +265,34 @@ def test_admin_get_and_update_order_status(client, user_headers, admin_headers, 
     # Invalid transition: confirmed -> delivered (must be shipping first)
     invalid_res = client.put(f"/api/orders/admin/{order_id}/status", json={"status": "delivered"}, headers=admin_headers)
     assert invalid_res.status_code == 400
+
+
+def test_admin_update_payment_status(client, user_headers, admin_headers, apple_product):
+    payload = {
+        "items": [{"product_id": apple_product.id, "quantity": 1}],
+        "shipping_address": "Thôn 10, Xã Phú Xuân, Đắk Lắk",
+        "payment_method": "COD",
+    }
+    create_res = client.post("/api/orders", json=payload, headers=user_headers)
+    order_id = create_res.json()["id"]
+    assert create_res.json()["payment_status"] == "unpaid"
+
+    # Admin updates payment status to paid
+    update_res = client.put(
+        f"/api/orders/admin/{order_id}/payment-status",
+        json={"payment_status": "paid"},
+        headers=admin_headers,
+    )
+    assert update_res.status_code == 200
+    assert update_res.json()["payment_status"] == "paid"
+
+    # Non-admin cannot update payment status
+    user_res = client.put(
+        f"/api/orders/admin/{order_id}/payment-status",
+        json={"payment_status": "paid"},
+        headers=user_headers,
+    )
+    assert user_res.status_code == 403
 
 
 def test_non_admin_cannot_access_admin_orders(client, user_headers):

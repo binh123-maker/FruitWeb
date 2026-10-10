@@ -126,6 +126,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return subtotal >= 300000 ? 0 : 25000;
   }, [subtotal, selectedItems]);
 
+  // Re-validate coupon whenever subtotal changes to ensure discounts are always accurate with backend
+  useEffect(() => {
+    if (!appliedCoupon) return;
+    if (subtotal <= 0) {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      return;
+    }
+    couponService
+      .validateCoupon(appliedCoupon.code, subtotal)
+      .then(({ discountAmount }) => {
+        setCouponDiscount(discountAmount);
+      })
+      .catch((err) => {
+        setAppliedCoupon(null);
+        setCouponDiscount(0);
+        showToast(`Mã giảm giá không còn áp dụng: ${err.message}`, 'info');
+      });
+  }, [subtotal, appliedCoupon, showToast]);
+
   const total = useMemo(() => {
     const finalTotal = subtotal + shippingFee - couponDiscount;
     return Math.max(0, finalTotal);

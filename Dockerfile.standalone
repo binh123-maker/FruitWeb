@@ -1,0 +1,39 @@
+# ========================================================
+# Stage 1: Build React App (Standalone Demo with Mock Data)
+# ========================================================
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Enable mock data for standalone frontend demo
+ENV VITE_USE_MOCK_DATA=true
+ENV VITE_API_URL=
+
+# Copy package files and install dependencies
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Copy source code and build Vite bundle
+COPY frontend/ .
+RUN npm run build
+
+
+# ========================================================
+# Stage 2: Run with Nginx (Standalone Configuration)
+# ========================================================
+FROM nginx:alpine
+
+# Remove default nginx page
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy built frontend assets
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Use standalone Nginx configuration (No backend upstream dependency)
+COPY docker/nginx/nginx.standalone.conf /etc/nginx/conf.d/default.conf
+
+# Expose HTTP port
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

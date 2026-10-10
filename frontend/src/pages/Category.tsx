@@ -5,6 +5,7 @@ import { productService } from '../services/productService';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { EmptyState } from '../components/common/EmptyState';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { ArrowLeft, Sparkles, Folder } from 'lucide-react';
 
 export const CategoryPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -31,34 +32,44 @@ export const CategoryPage: React.FC = () => {
   }, [slug]);
 
   if (isLoading) {
-    return <LoadingSpinner label="Đang tải sản phẩm theo danh mục..." />;
+    return <LoadingSpinner label="Đang tải danh mục trái cây..." size="lg" />;
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
       {/* Category Header Banner */}
-      <div className="relative rounded-3xl overflow-hidden bg-slate-900 text-white p-8 sm:p-12 border border-slate-800 shadow-xl">
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-emerald-950 via-slate-900 to-emerald-900 text-white p-7 sm:p-12 border border-emerald-800/40 shadow-xl">
         {category?.image && (
           <img
             src={category.image}
             alt={category.name}
-            className="absolute inset-0 w-full h-full object-cover opacity-30"
+            className="absolute inset-0 w-full h-full object-cover opacity-25"
             onError={(e) => {
               const target = e.currentTarget;
-              const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
+              const fallback =
+                'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
               if (!target.src.includes('1610832958506')) {
                 target.src = fallback;
               }
             }}
           />
         )}
-        <div className="relative z-10 max-w-xl">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Danh Mục Trái Cây</span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-1">
+        <div className="relative z-10 max-w-xl flex flex-col gap-2">
+          <Link
+            to="/products"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors w-fit mb-1"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Tất cả sản phẩm</span>
+          </Link>
+          <span className="text-xs font-black uppercase tracking-widest text-emerald-300 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Danh Mục Chọn Lọc
+          </span>
+          <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
             {category?.name || 'Danh Mục Trái Cây'}
           </h1>
-          <p className="text-slate-300 text-sm sm:text-base mt-2 leading-relaxed">
-            {category?.description || 'Những loại trái cây tươi ngon chất lượng nhất thuộc danh mục này.'}
+          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed mt-1">
+            {category?.description || 'Những loại trái cây tươi ngon tuyển chọn chất lượng nhất thuộc danh mục này.'}
           </p>
         </div>
       </div>
@@ -66,13 +77,19 @@ export const CategoryPage: React.FC = () => {
       {/* Product Grid */}
       {products.length === 0 ? (
         <EmptyState
-          title="Danh mục hiện chưa có sản phẩm"
-          description="Vui lòng quay lại sau hoặc tham khảo các danh mục sản phẩm khác tại FreshFruit."
+          icon={<Folder className="w-14 h-14 text-slate-300" />}
+          title="Danh Mục Hiện Chưa Có Sản Phẩm"
+          description="Sản phẩm thuộc danh mục này đang được cập nhật thêm. Vui lòng tham khảo các danh mục sản phẩm khác."
           actionText="Xem tất cả sản phẩm"
-          onAction={() => window.location.href = '/products'}
+          onAction={() => (window.location.href = '/products')}
         />
       ) : (
-        <ProductGrid products={products} />
+        <div className="flex flex-col gap-4">
+          <span className="text-xs font-bold text-slate-500">
+            Có <strong>{products.length}</strong> sản phẩm trong danh mục này:
+          </span>
+          <ProductGrid products={products} />
+        </div>
       )}
     </div>
   );

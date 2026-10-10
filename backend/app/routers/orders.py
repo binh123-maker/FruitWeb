@@ -7,6 +7,7 @@ from app.core.database import get_db
 from app.dependencies.auth import get_current_active_user, require_admin
 from app.models.user import User
 from app.models.product import Product
+import unicodedata
 from app.models.cart import CartItem
 from app.models.order import Order, OrderItem
 from app.models.coupon import Coupon
@@ -15,6 +16,7 @@ from app.schemas.order import (
     OrderResponse,
     OrderItemResponse,
     OrderStatusUpdate,
+    OrderPaymentStatusUpdate,
     PaginatedOrderResponse,
 )
 from app.routers.coupons import calculate_coupon_discount
@@ -30,6 +32,35 @@ ALLOWED_TRANSITIONS = {
     "delivered": [],
     "cancelled": [],
 }
+
+
+def validate_delivery_area(shipping_address: str) -> tuple[bool, str]:
+    """
+    Giới hạn phạm vi giao hàng: Chỉ phục vụ giao hàng trong phạm vi Xã Phú Xuân, Tỉnh Đắk Lắk.
+    Cửa hàng: Số 34, Thôn 4, Xã Phú Xuân, Đắk Lắk.
+    """
+    if not shipping_address or len(shipping_address.strip()) < 5:
+        return False, "Địa chỉ nhận hàng không hợp lệ (quá ngắn)."
+
+    addr_norm = unicodedata.normalize("NFC", shipping_address).lower()
+
+    # Kiểm tra Xã Phú Xuân (hỗ trợ cả có dấu và không dấu)
+    has_phu_xuan = "phú xuân" in addr_norm or "phu xuan" in addr_norm
+
+    # Kiểm tra Đắk Lắk (hỗ trợ đắk lắk, đăk lăk, dak lak, daklak)
+    has_dak_lak = (
+        "đắk lắk" in addr_norm
+        or "dak lak" in addr_norm
+        or "đăk lăk" in addr_norm
+        or "daklak" in addr_norm
+    )
+
+    if not (has_phu_xuan and has_dak_lak):
+        return (
+            False,
+            "Rất tiếc! Hiện tại FruitWeb chỉ nhận phục vụ giao hàng trong phạm vi Xã Phú Xuân, Tỉnh Đắk Lắk. Vui lòng kiểm tra lại địa chỉ nhận hàng.",
+        )
+    return True, ""
 
 
 def _calculate_product_price(product: Product) -> float:
@@ -55,6 +86,16 @@ def _build_order_response(order: Order) -> OrderResponse:
             )
         )
 
+    # Đảm bảo payment_status phản ánh đúng phương thức thanh toán
+    payment_status = getattr(order, "payment_status", None)
+    if not payment_status:
+        if (order.payment_method or "").upper() == "ONLINE_MOCK":
+            payment_status = "paid_mock"
+        elif order.status == "delivered":
+            payment_status = "paid"
+        else:
+            payment_status = "unpaid"
+
     return OrderResponse(
         id=order.id,
         user_id=order.user_id,
@@ -67,6 +108,7 @@ def _build_order_response(order: Order) -> OrderResponse:
         customer_name=order.customer_name,
         phone=order.phone,
         payment_method=order.payment_method,
+        payment_status=payment_status,
         created_at=order.created_at,
         updated_at=order.updated_at,
         items=item_responses,
@@ -86,6 +128,14 @@ def create_order(
     - Hỗ trợ mã giảm giá coupon.
     - Trừ tồn kho và xóa giỏ hàng trong cùng transaction an toàn.
     """
+    # Giới hạn phạm vi giao hàng: Chỉ nhận đơn trong Xã Phú Xuân, Đắk Lắk
+    is_valid_area, area_err = validate_delivery_area(payload.shipping_address)
+    if not is_valid_area:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=area_err,
+        )
+
     items_to_order: list[tuple[Product, int]] = []
     from_cart = False
 
@@ -165,6 +215,8 @@ def create_order(
         coupon.usage_count += 1
 
     total_amount = max(0.0, round(subtotal - discount_amount, 2))
+    is_online_mock = (payload.payment_method or "").upper() == "ONLINE_MOCK"
+    initial_payment_status = "paid_mock" if is_online_mock else "unpaid"
 
     # Tạo Order
     order = Order(
@@ -177,6 +229,7 @@ def create_order(
         customer_name=payload.customer_name or current_user.full_name or current_user.email,
         phone=payload.phone or current_user.phone,
         payment_method=payload.payment_method or "COD",
+        payment_status=initial_payment_status,
         shipping_address=payload.shipping_address,
     )
     db.add(order)
@@ -355,8 +408,12 @@ def admin_update_order_status(
             detail=f"Không thể chuyển trạng thái từ '{order.status}' sang '{new_status}'. Các trạng thái cho phép: {allowed}",
         )
 
-    # Nếu chuyển sang cancelled, hoàn lại tồn kho
-    if new_status == "cancelled":
+    # Nếu chuyển sang delivered: COD được tự động ghi nhận là đã thu tiền (paid)
+    if new_status == "delivered":
+        if getattr(order, "payment_method", "COD") == "COD" and getattr(order, "payment_status", "unpaid") == "unpaid":
+            order.payment_status = "paid"
+    # Nếu chuyển sang cancelled, hoàn lại tồn kho và cập nhật refunded nếu đã thanh toán
+    elif new_status == "cancelled":
         for item in order.items:
             prod = db.query(Product).filter(Product.id == item.product_id).with_for_update().first()
             if prod:
@@ -366,8 +423,39 @@ def admin_update_order_status(
             coupon = db.query(Coupon).filter(Coupon.code == order.coupon_code).with_for_update().first()
             if coupon and coupon.usage_count > 0:
                 coupon.usage_count -= 1
+        if getattr(order, "payment_status", "unpaid") in ["paid", "paid_mock"]:
+            order.payment_status = "refunded"
 
     order.status = new_status
+    db.commit()
+    db.refresh(order)
+    return _build_order_response(order)
+
+
+@router.put("/admin/{order_id}/payment-status", response_model=OrderResponse)
+def admin_update_order_payment_status(
+    order_id: int,
+    payload: OrderPaymentStatusUpdate,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
+    """Admin cập nhật trạng thái thanh toán của đơn hàng (unpaid, paid, paid_mock, refunded)."""
+    order = db.query(Order).filter(Order.id == order_id).with_for_update().first()
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Đơn hàng không tồn tại",
+        )
+
+    valid_statuses = ["unpaid", "paid", "paid_mock", "refunded"]
+    new_status = payload.payment_status.strip().lower()
+    if new_status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Trạng thái thanh toán '{payload.payment_status}' không hợp lệ. Phải là một trong {valid_statuses}",
+        )
+
+    order.payment_status = new_status
     db.commit()
     db.refresh(order)
     return _build_order_response(order)

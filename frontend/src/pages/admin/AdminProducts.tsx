@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { productService } from '../../services/productService';
 import type { Product, Category } from '../../types';
 import { Button } from '../../components/common/Button';
@@ -35,7 +35,7 @@ export const AdminProducts: React.FC = () => {
     isBestSeller: false,
   });
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     setIsLoading(true);
     try {
       const [pRes, cRes] = await Promise.all([
@@ -49,11 +49,11 @@ export const AdminProducts: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     fetchProducts();
-  }, [search]);
+  }, [fetchProducts]);
 
   const handleOpenModal = (product?: Product) => {
     if (product) {
@@ -94,7 +94,7 @@ export const AdminProducts: React.FC = () => {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || formData.price <= 0) {
+    if (!formData.name.trim() || formData.price <= 0) {
       showToast('Vui lòng điền tên và giá sản phẩm hợp lệ!', 'error');
       return;
     }
@@ -104,13 +104,15 @@ export const AdminProducts: React.FC = () => {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, {
           ...formData,
+          name: formData.name.trim(),
           salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
         });
         showToast('Cập nhật sản phẩm thành công!', 'success');
       } else {
         await productService.createProduct({
           ...formData,
-          slug: formData.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
+          name: formData.name.trim(),
+          slug: formData.name.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
           salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
           rating: 5,
           reviewCount: 0,
@@ -141,7 +143,10 @@ export const AdminProducts: React.FC = () => {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold text-slate-900">Quản Lý Sản Phẩm Kho</h2>
+        <div>
+          <h2 className="text-xl font-black text-slate-900 tracking-tight">Quản Lý Sản Phẩm Trong Kho</h2>
+          <p className="text-xs text-slate-500 mt-0.5">Danh sách các loại trái cây đang quản lý trên hệ thống</p>
+        </div>
         <Button
           onClick={() => handleOpenModal()}
           variant="primary"
@@ -153,25 +158,25 @@ export const AdminProducts: React.FC = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3">
-        <Search className="w-4 h-4 text-slate-400" />
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center gap-3">
+        <Search className="w-4 h-4 text-slate-400 ml-1" />
         <input
           type="text"
           placeholder="Tìm sản phẩm theo tên..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 bg-transparent text-sm focus:outline-none"
+          className="flex-1 bg-transparent text-xs sm:text-sm focus:outline-none"
         />
       </div>
 
       {/* Table */}
       {isLoading ? (
-        <LoadingSpinner label="Đang tải danh sách sản phẩm..." />
+        <LoadingSpinner label="Đang tải danh sách sản phẩm..." size="lg" />
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-x-auto">
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-100 text-slate-400 uppercase font-bold">
+              <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase font-black text-[11px]">
                 <th className="py-3 px-4">Sản Phẩm</th>
                 <th className="py-3 px-4">Danh Mục</th>
                 <th className="py-3 px-4">Giá / Đơn vị</th>
@@ -182,39 +187,47 @@ export const AdminProducts: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {products.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50">
+                <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="py-3 px-4 flex items-center gap-3">
                     <img
                       src={p.image}
                       alt={p.name}
-                      className="w-10 h-10 rounded-lg object-cover bg-slate-50"
+                      className="w-10 h-10 rounded-xl object-cover bg-slate-50 border border-slate-100 shrink-0"
                       onError={(e) => {
                         const target = e.currentTarget;
-                        const fallback = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
+                        const fallback =
+                          'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
                         if (!target.src.includes('1610832958506')) {
                           target.src = fallback;
                         }
                       }}
                     />
-                    <span className="font-bold text-slate-900">{p.name}</span>
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-extrabold text-slate-900 truncate">{p.name}</span>
+                      <span className="text-[11px] text-slate-400">{p.origin || 'Việt Nam'}</span>
+                    </div>
                   </td>
-                  <td className="py-3 px-4 text-slate-600">{p.categoryName || p.category}</td>
-                  <td className="py-3 px-4 font-bold text-emerald-600">
+                  <td className="py-3 px-4 text-slate-600 font-semibold">{p.categoryName || p.category}</td>
+                  <td className="py-3 px-4 font-black text-emerald-700">
                     {p.salePrice ? p.salePrice.toLocaleString('vi-VN') : p.price.toLocaleString('vi-VN')}đ /{p.unit}
                   </td>
-                  <td className="py-3 px-4 font-bold text-slate-800">{p.stock}</td>
+                  <td className="py-3 px-4 font-black text-slate-800">{p.stock}</td>
                   <td className="py-3 px-4 text-slate-500">{p.soldCount}</td>
                   <td className="py-3 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1.5">
                       <button
+                        type="button"
                         onClick={() => handleOpenModal(p)}
-                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer transition-colors"
+                        title="Chỉnh sửa"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDeleteProduct(p.id)}
-                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 cursor-pointer transition-colors"
+                        title="Xóa"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -242,12 +255,12 @@ export const AdminProducts: React.FC = () => {
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5 text-xs font-semibold text-slate-700">
+            <div className="flex flex-col gap-1.5 text-xs font-bold text-slate-700">
               <label>Danh mục</label>
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="bg-slate-50 border border-slate-200 rounded-xl p-2.5"
+                className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 {categories.length === 0 && <option value="">-- Chọn danh mục --</option>}
                 {categories.map((c) => (
@@ -296,12 +309,13 @@ export const AdminProducts: React.FC = () => {
             onChange={(e) => setFormData({ ...formData, image: e.target.value })}
           />
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 pt-1">
             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
               <input
                 type="checkbox"
                 checked={formData.isOrganic}
                 onChange={(e) => setFormData({ ...formData, isOrganic: e.target.checked })}
+                className="rounded text-emerald-600 focus:ring-emerald-500"
               />
               <span>Trái cây Hữu cơ (Organic)</span>
             </label>
@@ -311,6 +325,7 @@ export const AdminProducts: React.FC = () => {
                 type="checkbox"
                 checked={formData.isBestSeller}
                 onChange={(e) => setFormData({ ...formData, isBestSeller: e.target.checked })}
+                className="rounded text-amber-500 focus:ring-amber-400"
               />
               <span>Đặt làm Bán Chạy</span>
             </label>

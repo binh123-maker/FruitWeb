@@ -19,6 +19,7 @@ import { Products } from './pages/Products';
 import { ProductDetail } from './pages/ProductDetail';
 import { CategoryPage } from './pages/Category';
 import { SearchPage } from './pages/Search';
+import { About } from './pages/About';
 
 // E-Commerce Pages
 import { Cart } from './pages/Cart';
@@ -45,7 +46,7 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 // Main Store Layout Wrapper (Header + Page + Footer)
 const MainStoreLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-transparent font-sans text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
       <Header />
       <main className="flex-1">
         <Outlet />
@@ -70,6 +71,7 @@ export function App() {
                   <Route path="/products/:id" element={<ProductDetail />} />
                   <Route path="/categories/:slug" element={<CategoryPage />} />
                   <Route path="/search" element={<SearchPage />} />
+                  <Route path="/about" element={<About />} />
 
                   {/* E-Commerce Flow */}
                   <Route path="/cart" element={<Cart />} />

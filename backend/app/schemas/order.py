@@ -46,6 +46,7 @@ class OrderResponse(BaseModel):
     customer_name: Optional[str] = None
     phone: Optional[str] = None
     payment_method: Optional[str] = "COD"
+    payment_status: Optional[str] = "unpaid"
     created_at: datetime
     updated_at: datetime
     items: List[OrderItemResponse] = []
@@ -53,6 +54,10 @@ class OrderResponse(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status: str = Field(..., description="Trạng thái đơn hàng mới")
+
+
+class OrderPaymentStatusUpdate(BaseModel):
+    payment_status: str = Field(..., description="Trạng thái thanh toán mới (unpaid, paid, paid_mock, refunded)")
 
 
 class PaginatedOrderResponse(BaseModel):

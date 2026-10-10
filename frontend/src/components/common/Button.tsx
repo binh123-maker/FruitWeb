@@ -19,27 +19,27 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyle =
-    'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer shadow-xs';
+    'inline-flex items-center justify-center font-bold rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 cursor-pointer shadow-xs select-none';
 
   const variants = {
     primary:
-      'bg-emerald-600 hover:bg-emerald-700 text-white focus:ring-emerald-500 hover:shadow-emerald-200 hover:shadow-md',
+      'bg-emerald-600 hover:bg-emerald-500 text-white focus-visible:ring-emerald-500 hover:shadow-md hover:shadow-emerald-600/25 active:bg-emerald-700',
     secondary:
-      'bg-slate-800 hover:bg-slate-900 text-white focus:ring-slate-700 hover:shadow-md',
+      'bg-slate-900 hover:bg-slate-800 text-white focus-visible:ring-slate-700 hover:shadow-md active:bg-slate-950',
     outline:
-      'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-emerald-500 hover:border-slate-400',
+      'border border-slate-200 bg-white hover:bg-emerald-50 hover:border-emerald-300 text-slate-700 hover:text-emerald-700 focus-visible:ring-emerald-500',
     ghost:
-      'bg-transparent hover:bg-slate-100 text-slate-700 focus:ring-slate-400 shadow-none',
+      'bg-transparent hover:bg-slate-100 text-slate-700 hover:text-emerald-700 focus-visible:ring-slate-400 shadow-none',
     danger:
-      'bg-rose-600 hover:bg-rose-700 text-white focus:ring-rose-500 hover:shadow-rose-200 hover:shadow-md',
+      'bg-rose-600 hover:bg-rose-500 text-white focus-visible:ring-rose-500 hover:shadow-md hover:shadow-rose-600/20 active:bg-rose-700',
     amber:
-      'bg-amber-500 hover:bg-amber-600 text-white focus:ring-amber-400 hover:shadow-amber-200 hover:shadow-md',
+      'bg-amber-500 hover:bg-amber-400 text-slate-900 font-extrabold focus-visible:ring-amber-400 hover:shadow-md hover:shadow-amber-500/25 active:bg-amber-600',
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs font-semibold gap-1.5',
+    sm: 'px-3 py-1.5 text-xs gap-1.5',
     md: 'px-4 py-2.5 text-sm gap-2',
-    lg: 'px-6 py-3.5 text-base font-semibold gap-2.5',
+    lg: 'px-6 py-3.5 text-base gap-2.5 shadow-sm',
   };
 
   return (
@@ -51,7 +51,7 @@ export const Button: React.FC<ButtonProps> = ({
       {isLoading ? (
         <Loader2 className="w-4 h-4 animate-spin shrink-0" />
       ) : (
-        icon && <span className="shrink-0">{icon}</span>
+        icon && <span className="shrink-0 transition-transform duration-200 group-hover:scale-110">{icon}</span>
       )}
       <span>{children}</span>
     </button>

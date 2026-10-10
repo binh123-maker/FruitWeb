@@ -1,92 +1,130 @@
-import { User, Address } from '../types';
+import { User, Address, UserRole } from '../types';
 import { storage, STORAGE_KEYS } from '../utils/storage';
-import { INITIAL_USERS } from '../mock/data';
+import { apiClient } from '../api/client';
+import { mockStore, isMockMode } from '../mock/mockStore';
 
-const delay = (ms = 250) => new Promise((resolve) => setTimeout(resolve, ms));
+export interface AdminUserResponse {
+  id: number;
+  email: string;
+  username?: string | null;
+  full_name?: string | null;
+  phone?: string | null;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-const getStoredUsers = (): User[] => {
-  const existing = storage.getItem<User[]>(STORAGE_KEYS.USERS, []);
-  if (existing.length === 0) {
-    storage.setItem(STORAGE_KEYS.USERS, INITIAL_USERS);
-    return INITIAL_USERS;
-  }
-  return existing;
-};
+export interface PaginatedUserResponse {
+  items: AdminUserResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+function mapBackendUserToFrontend(u: AdminUserResponse): User {
+  return {
+    id: String(u.id),
+    name: u.full_name || u.username || u.email,
+    email: u.email,
+    phone: u.phone || '',
+    role: (u.role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER') as UserRole,
+    status: u.is_active ? 'ACTIVE' : 'BLOCKED',
+    createdAt: u.created_at,
+  };
+}
 
 export const userService = {
-  async getUsers(): Promise<User[]> {
-    await delay(250);
-    return getStoredUsers();
+  /**
+   * Lấy danh sách người dùng hệ thống từ backend API (chỉ Admin)
+   */
+  async getUsers(params?: {
+    search?: string;
+    role?: string;
+    is_active?: boolean;
+    page?: number;
+    limit?: number;
+  }): Promise<User[]> {
+    if (isMockMode()) {
+      return mockStore.getUsers();
+    }
+    const res = await apiClient.get<PaginatedUserResponse>('/api/admin/users', {
+      params: {
+        search: params?.search,
+        role: params?.role,
+        is_active: params?.is_active,
+        page: params?.page || 1,
+        limit: params?.limit || 100,
+      },
+    });
+    return (res?.items || []).map(mapBackendUserToFrontend);
   },
 
+  /**
+   * Admin cập nhật quyền vai trò (USER / ADMIN) qua API
+   * Backend có kiểm tra bảo vệ tránh hạ quyền admin cuối cùng
+   */
   async updateUserRole(userId: string, role: 'USER' | 'ADMIN'): Promise<User> {
-    await delay(300);
-    const users = getStoredUsers();
-    const index = users.findIndex((u) => u.id === userId);
-    if (index === -1) throw new Error('Người dùng không tồn tại!');
-
-    users[index].role = role;
-    storage.setItem(STORAGE_KEYS.USERS, users);
-    return users[index];
+    const res = await apiClient.put<AdminUserResponse>(`/api/admin/users/${userId}/role`, {
+      role,
+    });
+    return mapBackendUserToFrontend(res);
   },
 
+  /**
+   * Admin khóa / mở khóa tài khoản người dùng qua API
+   */
   async updateUserStatus(userId: string, status: 'ACTIVE' | 'BLOCKED'): Promise<User> {
-    await delay(300);
-    const users = getStoredUsers();
-    const index = users.findIndex((u) => u.id === userId);
-    if (index === -1) throw new Error('Người dùng không tồn tại!');
-
-    users[index].status = status;
-    storage.setItem(STORAGE_KEYS.USERS, users);
-    return users[index];
+    const res = await apiClient.put<AdminUserResponse>(`/api/admin/users/${userId}/status`, {
+      is_active: status === 'ACTIVE',
+    });
+    return mapBackendUserToFrontend(res);
   },
 
-  // Address operations
+  // Address operations (lưu trữ phục vụ profile người dùng)
   async getAddresses(userId: string): Promise<Address[]> {
-    await delay(150);
-    const users = getStoredUsers();
+    const users = storage.getItem<User[]>(STORAGE_KEYS.USERS, []);
     const user = users.find((u) => u.id === userId);
     return user?.addresses || [];
   },
 
   async addAddress(userId: string, data: Omit<Address, 'id'>): Promise<Address[]> {
-    await delay(250);
-    const users = getStoredUsers();
+    const users = storage.getItem<User[]>(STORAGE_KEYS.USERS, []);
     const userIndex = users.findIndex((u) => u.id === userId);
-    if (userIndex === -1) throw new Error('Người dùng không tồn tại!');
+    if (userIndex === -1) {
+      // Lưu địa chỉ vào currentUser nếu có
+      const currentUser = storage.getItem<User | null>(STORAGE_KEYS.CURRENT_USER, null);
+      if (currentUser && currentUser.id === userId) {
+        const newAddress: Address = { ...data, id: `addr-${Date.now()}` };
+        currentUser.addresses = [...(currentUser.addresses || []), newAddress];
+        storage.setItem(STORAGE_KEYS.CURRENT_USER, currentUser);
+        return currentUser.addresses;
+      }
+      return [];
+    }
 
     const user = users[userIndex];
     const addresses = user.addresses || [];
-
     const newAddress: Address = {
       ...data,
       id: `addr-${Date.now()}`,
     };
 
-    if (newAddress.isDefault || addresses.length === 0) {
-      newAddress.isDefault = true;
+    if (newAddress.isDefault) {
       addresses.forEach((a) => (a.isDefault = false));
     }
 
-    addresses.push(newAddress);
-    user.addresses = addresses;
-    users[userIndex] = user;
+    const updated = [...addresses, newAddress];
+    user.addresses = updated;
     storage.setItem(STORAGE_KEYS.USERS, users);
-
-    // Update current user session if needed
-    const currentUser = storage.getItem<User | null>(STORAGE_KEYS.CURRENT_USER, null);
-    if (currentUser && currentUser.id === userId) {
-      storage.setItem(STORAGE_KEYS.CURRENT_USER, user);
-    }
-
-    return addresses;
+    return updated;
   },
 
   async updateAddress(userId: string, addressId: string, data: Partial<Address>): Promise<Address[]> {
-    await delay(250);
-    const users = getStoredUsers();
+    const users = storage.getItem<User[]>(STORAGE_KEYS.USERS, []);
     const userIndex = users.findIndex((u) => u.id === userId);
-    if (userIndex === -1) throw new Error('Người dùng không tồn tại!');
+    if (userIndex === -1) return [];
 
     const user = users[userIndex];
     let addresses = user.addresses || [];
@@ -97,42 +135,20 @@ export const userService = {
 
     addresses = addresses.map((a) => (a.id === addressId ? { ...a, ...data } : a));
     user.addresses = addresses;
-    users[userIndex] = user;
     storage.setItem(STORAGE_KEYS.USERS, users);
-
-    const currentUser = storage.getItem<User | null>(STORAGE_KEYS.CURRENT_USER, null);
-    if (currentUser && currentUser.id === userId) {
-      storage.setItem(STORAGE_KEYS.CURRENT_USER, user);
-    }
-
     return addresses;
   },
 
   async deleteAddress(userId: string, addressId: string): Promise<Address[]> {
-    await delay(200);
-    const users = getStoredUsers();
+    const users = storage.getItem<User[]>(STORAGE_KEYS.USERS, []);
     const userIndex = users.findIndex((u) => u.id === userId);
-    if (userIndex === -1) throw new Error('Người dùng không tồn tại!');
+    if (userIndex === -1) return [];
 
     const user = users[userIndex];
     let addresses = user.addresses || [];
-    const wasDefault = addresses.find((a) => a.id === addressId)?.isDefault;
-
     addresses = addresses.filter((a) => a.id !== addressId);
-
-    if (wasDefault && addresses.length > 0) {
-      addresses[0].isDefault = true;
-    }
-
     user.addresses = addresses;
-    users[userIndex] = user;
     storage.setItem(STORAGE_KEYS.USERS, users);
-
-    const currentUser = storage.getItem<User | null>(STORAGE_KEYS.CURRENT_USER, null);
-    if (currentUser && currentUser.id === userId) {
-      storage.setItem(STORAGE_KEYS.CURRENT_USER, user);
-    }
-
     return addresses;
-  }
+  },
 };

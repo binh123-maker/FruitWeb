@@ -5,6 +5,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+ARG VITE_USE_MOCK_DATA=false
+ARG VITE_API_URL=
+ENV VITE_USE_MOCK_DATA=$VITE_USE_MOCK_DATA
+ENV VITE_API_URL=$VITE_API_URL
+
 # Copy package files
 COPY frontend/package*.json ./
 
@@ -23,6 +28,8 @@ RUN npm run build
 # =========================
 FROM nginx:alpine
 
+ARG NGINX_CONF=docker/nginx/nginx.conf
+
 # Remove default nginx page
 RUN rm -rf /usr/share/nginx/html/*
 
@@ -30,7 +37,7 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY docker/nginx/nginx.conf /etc/nginx/conf.d/default.conf
+COPY ${NGINX_CONF} /etc/nginx/conf.d/default.conf
 
 # Expose HTTP port
 EXPOSE 80

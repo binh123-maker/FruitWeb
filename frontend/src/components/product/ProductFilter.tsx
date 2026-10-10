@@ -1,6 +1,5 @@
 import React from 'react';
 import { Category, FilterOptions } from '../../types';
-import { Button } from '../common/Button';
 import { Filter, RotateCcw } from 'lucide-react';
 
 interface ProductFilterProps {

@@ -1,5 +1,6 @@
 import { apiClient } from './client';
 import type { Category } from '../types';
+import { mockStore, isMockMode } from '../mock/mockStore';
 
 export interface BackendCategory {
   id: number;
@@ -45,6 +46,9 @@ export const categoryApi = {
    * Get all categories (Public)
    */
   async getCategories(isActive: boolean = true): Promise<Category[]> {
+    if (isMockMode()) {
+      return mockStore.getCategories(isActive);
+    }
     const res = await apiClient.get<BackendCategory[]>('/api/categories', {
       params: { is_active: isActive },
     });
@@ -55,6 +59,9 @@ export const categoryApi = {
    * Get single category by ID (Public)
    */
   async getCategoryById(id: number | string): Promise<Category> {
+    if (isMockMode()) {
+      return mockStore.getCategoryById(id);
+    }
     const res = await apiClient.get<BackendCategory>(`/api/categories/${id}`);
     return mapBackendCategoryToFrontend(res);
   },
@@ -63,6 +70,9 @@ export const categoryApi = {
    * Create category (Admin Only)
    */
   async createCategory(payload: CategoryCreatePayload): Promise<Category> {
+    if (isMockMode()) {
+      return mockStore.createCategory(payload);
+    }
     const res = await apiClient.post<BackendCategory>('/api/categories', payload);
     return mapBackendCategoryToFrontend(res);
   },
@@ -71,6 +81,9 @@ export const categoryApi = {
    * Update category (Admin Only)
    */
   async updateCategory(id: number | string, payload: CategoryUpdatePayload): Promise<Category> {
+    if (isMockMode()) {
+      return mockStore.updateCategory(id, payload);
+    }
     const res = await apiClient.put<BackendCategory>(`/api/categories/${id}`, payload);
     return mapBackendCategoryToFrontend(res);
   },
@@ -79,6 +92,10 @@ export const categoryApi = {
    * Delete category (Admin Only)
    */
   async deleteCategory(id: number | string): Promise<{ success: boolean; message: string }> {
+    if (isMockMode()) {
+      await mockStore.deleteCategory(id);
+      return { success: true, message: 'Đã xóa danh mục (Mock)' };
+    }
     return apiClient.delete<{ success: boolean; message: string }>(`/api/categories/${id}`);
   },
 };

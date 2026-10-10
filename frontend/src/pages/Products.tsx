@@ -6,7 +6,7 @@ import { ProductGrid } from '../components/product/ProductGrid';
 import { ProductFilter } from '../components/product/ProductFilter';
 import { ProductSort } from '../components/product/ProductSort';
 import { EmptyState } from '../components/common/EmptyState';
-import { Filter, SlidersHorizontal, X } from 'lucide-react';
+import { SlidersHorizontal, X, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/common/Button';
 
 export const Products: React.FC = () => {
@@ -31,7 +31,7 @@ export const Products: React.FC = () => {
         const cats = await productService.getCategories();
         setCategories(cats);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching categories:', err);
       }
     };
     fetchCategories();
@@ -72,25 +72,45 @@ export const Products: React.FC = () => {
     setSearchParams({});
   };
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
-      {/* Page Title & Breadcrumb Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-emerald-900 text-white p-6 sm:p-8 rounded-3xl shadow-lg relative overflow-hidden">
-        <div className="relative z-10">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">FreshFruit Store</span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">Tất Cả Trái Cây Tươi</h1>
-          <p className="text-emerald-100 text-sm mt-1">
-            Tuyển chọn 100% trái cây sạch, mọng nước nhập khẩu & đặc sản Việt Nam.
-          </p>
-        </div>
+  const totalPages = Math.ceil(total / (filters.limit || 12));
+  const currentPage = filters.page || 1;
 
-        <button
-          onClick={() => setIsMobileFilterOpen(true)}
-          className="lg:hidden flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-xl font-bold text-sm backdrop-blur-xs cursor-pointer self-start md:self-auto"
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          <span>Bộ Lọc</span>
-        </button>
+  const hasActiveFilters = Boolean(
+    filters.category ||
+    filters.search ||
+    filters.minPrice !== undefined ||
+    filters.maxPrice !== undefined ||
+    filters.isOrganic ||
+    filters.inStockOnly
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+      {/* Page Title & Breadcrumb Header Banner */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-950 via-emerald-900 to-slate-900 text-white p-7 sm:p-10 rounded-3xl shadow-xl border border-emerald-800/40">
+        <div className="absolute top-0 right-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Siêu Thị Trái Cây Tươi
+            </span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+              Tất Cả Sản Phẩm Trái Cây
+            </h1>
+            <p className="text-emerald-100/80 text-xs sm:text-sm max-w-xl font-normal mt-0.5">
+              100% trái cây sạch tuyển chọn, ngọt mát tự nhiên, chuẩn vệ sinh an toàn thực phẩm.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="lg:hidden inline-flex items-center justify-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 text-white px-4 py-2.5 rounded-xl font-bold text-xs backdrop-blur-xs cursor-pointer border border-white/20 self-start md:self-auto shadow-xs"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span>Bộ Lọc ({hasActiveFilters ? 'Đang lọc' : 'Tất cả'})</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Grid + Filter Sidebar */}
@@ -111,41 +131,78 @@ export const Products: React.FC = () => {
         <div className="lg:col-span-3 flex flex-col gap-6">
           <ProductSort
             sortBy={filters.sortBy}
-            onChange={(sort) => setFilters((prev) => ({ ...prev, sortBy: sort }))}
+            onChange={(sort) => setFilters((prev) => ({ ...prev, sortBy: sort, page: 1 }))}
             totalProducts={total}
           />
+
+          {/* Active Filter Chips */}
+          {hasActiveFilters && (
+            <div className="flex flex-wrap items-center gap-2 bg-emerald-50/60 p-3 rounded-2xl border border-emerald-100 text-xs font-semibold text-emerald-800">
+              <span className="font-bold text-slate-700">Đang lọc theo:</span>
+              {filters.search && (
+                <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+                  Từ khóa: "{filters.search}"
+                </span>
+              )}
+              {filters.category && (
+                <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+                  Danh mục: {categories.find((c) => c.slug === filters.category)?.name || filters.category}
+                </span>
+              )}
+              {filters.isOrganic && (
+                <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+                  Chỉ Organic
+                </span>
+              )}
+              {filters.inStockOnly && (
+                <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-emerald-200">
+                  Còn hàng
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="ml-auto text-xs font-bold text-rose-600 hover:text-rose-700 cursor-pointer flex items-center gap-1"
+              >
+                <X className="w-3.5 h-3.5" /> Xóa bộ lọc
+              </button>
+            </div>
+          )}
 
           {products.length === 0 && !isLoading ? (
             <EmptyState
               title="Không tìm thấy sản phẩm phù hợp"
-              description="Rất tiếc, không có sản phẩm nào phù hợp với các tiêu chí tìm kiếm hoặc bộ lọc hiện tại của bạn."
-              actionText="Xóa bộ lọc"
+              description="Rất tiếc, không có loại trái cây nào khớp với tiêu chí tìm kiếm hoặc bộ lọc hiện tại của bạn."
+              actionText="Xóa bộ lọc và xem lại"
               onAction={handleResetFilters}
             />
           ) : (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-8">
               <ProductGrid products={products} isLoading={isLoading} />
 
-              {Math.ceil(total / (filters.limit || 12)) > 1 && (
-                <div className="flex items-center justify-center gap-2 pt-4">
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2.5 pt-4">
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={(filters.page || 1) <= 1}
-                    onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, (prev.page || 1) - 1) }))}
+                    disabled={currentPage <= 1}
+                    onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, currentPage - 1) }))}
+                    icon={<ChevronLeft className="w-4 h-4" />}
                   >
-                    Trang trước
+                    Trước
                   </Button>
-                  <span className="text-xs font-bold text-slate-600 px-3 py-1.5 bg-white border border-slate-200 rounded-xl">
-                    Trang {filters.page || 1} / {Math.ceil(total / (filters.limit || 12))}
+                  <span className="text-xs font-black text-slate-700 px-3.5 py-2 bg-white border border-slate-200 rounded-xl shadow-2xs">
+                    Trang {currentPage} / {totalPages}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={(filters.page || 1) >= Math.ceil(total / (filters.limit || 12))}
-                    onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page || 1) + 1 }))}
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setFilters((prev) => ({ ...prev, page: Math.min(totalPages, currentPage + 1) }))}
                   >
-                    Trang sau
+                    <span>Sau</span>
+                    <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>
               )}
@@ -156,15 +213,17 @@ export const Products: React.FC = () => {
 
       {/* Mobile Drawer Filter */}
       {isMobileFilterOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end lg:hidden">
-          <div className="w-full max-w-xs bg-white h-full p-6 overflow-y-auto flex flex-col gap-4 animate-slide-in">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex justify-end lg:hidden">
+          <div className="w-full max-w-xs bg-white h-full p-6 overflow-y-auto flex flex-col gap-4 animate-slide-in shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-slate-900 text-lg">Bộ Lọc Sản Phẩm</h3>
+              <h3 className="font-black text-slate-900 text-base">Bộ Lọc Sản Phẩm</h3>
               <button
+                type="button"
                 onClick={() => setIsMobileFilterOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                aria-label="Đóng"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <ProductFilter
@@ -174,7 +233,10 @@ export const Products: React.FC = () => {
                 handleFilterChange(f);
                 setIsMobileFilterOpen(false);
               }}
-              onReset={handleResetFilters}
+              onReset={() => {
+                handleResetFilters();
+                setIsMobileFilterOpen(false);
+              }}
             />
           </div>
         </div>

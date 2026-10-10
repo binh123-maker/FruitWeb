@@ -41,23 +41,28 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+      role="dialog"
+      aria-modal="true"
+    >
       <div
-        className={`w-full bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all animate-scale-up ${maxWidths[maxWidth]}`}
+        className={`w-full bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-100 transform transition-all animate-scale-up ${maxWidths[maxWidth]}`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-            <h3 className="text-lg font-bold text-slate-800">{title}</h3>
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4.5 bg-slate-50/50">
+            <h3 className="text-base font-extrabold text-slate-900 tracking-tight">{title}</h3>
             <button
               onClick={onClose}
-              className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+              className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors cursor-pointer"
+              aria-label="Đóng"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         )}
-        <div className="p-6 max-h-[80vh] overflow-y-auto">{children}</div>
+        <div className="p-6 max-h-[82vh] overflow-y-auto">{children}</div>
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
-import { Leaf, LogIn, UserCheck, ShieldCheck } from 'lucide-react';
+import { Leaf, LogIn, UserCheck, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
@@ -16,22 +16,23 @@ export const Login: React.FC = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       showToast('Vui lòng điền email và mật khẩu!', 'error');
       return;
     }
 
     setIsLoading(true);
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       showToast('Đăng nhập thành công!', 'success');
       navigate(from, { replace: true });
     } catch (err: any) {
-      showToast(err.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin!', 'error');
+      showToast(err.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin tài khoản!', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -44,13 +45,13 @@ export const Login: React.FC = () => {
 
   return (
     <div className="max-w-md mx-auto px-4 py-12">
-      <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-xl flex flex-col gap-6">
+      <div className="bg-white p-7 sm:p-9 rounded-3xl border border-slate-100 shadow-xl flex flex-col gap-6">
         {/* Header */}
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-200">
-            <Leaf className="w-7 h-7" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white shadow-md shadow-emerald-500/25">
+            <Leaf className="w-6 h-6 fill-white/20" />
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-2">Chào Mừng Quay Lại</h1>
+          <h1 className="text-2xl font-black text-slate-900 mt-1 tracking-tight">Chào Mừng Quay Lại</h1>
           <p className="text-xs text-slate-500">Đăng nhập tài khoản FreshFruit để mua sắm nhanh chóng</p>
         </div>
 
@@ -67,19 +68,30 @@ export const Login: React.FC = () => {
 
           <Input
             label="Mật khẩu"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             required
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            rightIcon={
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="p-1 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer focus:outline-none flex items-center justify-center"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
           />
 
           <div className="flex items-center justify-between text-xs">
-            <label className="flex items-center gap-2 text-slate-600 font-medium cursor-pointer">
-              <input type="checkbox" className="rounded text-emerald-600 focus:ring-emerald-500" />
+            <label className="flex items-center gap-2 text-slate-600 font-medium cursor-pointer select-none">
+              <input type="checkbox" className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
               <span>Ghi nhớ đăng nhập</span>
             </label>
-            <Link to="/forgot-password" className="text-emerald-600 font-bold hover:underline">
+            <Link to="/forgot-password" className="text-emerald-700 font-extrabold hover:underline">
               Quên mật khẩu?
             </Link>
           </div>
@@ -98,15 +110,15 @@ export const Login: React.FC = () => {
 
         {/* Quick Demo Login Preset Buttons */}
         <div className="pt-4 border-t border-slate-100 flex flex-col gap-2.5">
-          <span className="text-[11px] font-bold uppercase text-slate-400 text-center">
+          <span className="text-[11px] font-black uppercase text-slate-400 text-center tracking-wider">
             Tài Khoản Dùng Thử Nhanh (Demo)
           </span>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          {/* <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               onClick={() => handleQuickLogin('user1@fruitweb.com', 'Password123!')}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:border-emerald-200 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:border-emerald-300 transition-all cursor-pointer"
             >
               <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Khách Hàng</span>
@@ -115,22 +127,22 @@ export const Login: React.FC = () => {
             <button
               type="button"
               onClick={() => handleQuickLogin('admin@fruitweb.com', 'AdminPassword123!')}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-purple-700 hover:border-purple-200 transition-all cursor-pointer"
+              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-purple-700 hover:border-purple-300 transition-all cursor-pointer"
             >
               <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
               <span>Quản Trị Admin</span>
             </button>
-          </div>
+          </div> */}
         </div>
 
-        {/* Footer Link */}
-        <div className="text-center text-xs text-slate-500 pt-2">
-          Chưa có tài khoản?{' '}
-          <Link to="/register" className="font-bold text-emerald-600 hover:underline">
-            Đăng ký ngay
-          </Link>
+          {/* Footer Link */}
+          <div className="text-center text-xs text-slate-500 pt-1">
+            Chưa có tài khoản?{' '}
+            <Link to="/register" className="font-extrabold text-emerald-700 hover:underline">
+              Đăng ký tài khoản mới
+            </Link>
+          </div>
         </div>
       </div>
-    </div>
-  );
+      );
 };

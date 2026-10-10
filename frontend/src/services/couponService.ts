@@ -1,48 +1,92 @@
 import { Coupon } from '../types';
-import { storage, STORAGE_KEYS } from '../utils/storage';
-import { INITIAL_COUPONS } from '../mock/data';
+import { apiClient } from '../api/client';
+import { mockStore, isMockMode } from '../mock/mockStore';
 
-const delay = (ms = 200) => new Promise((resolve) => setTimeout(resolve, ms));
+export interface BackendCouponResponse {
+  id: number;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_amount: number;
+  max_discount_amount?: number | null;
+  usage_limit?: number | null;
+  usage_count: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-const getStoredCoupons = (): Coupon[] => {
-  const existing = storage.getItem<Coupon[]>(STORAGE_KEYS.COUPONS, []);
-  if (existing.length === 0) {
-    storage.setItem(STORAGE_KEYS.COUPONS, INITIAL_COUPONS);
-    return INITIAL_COUPONS;
-  }
-  return existing;
-};
+export interface BackendCouponValidateResponse {
+  valid: boolean;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  discount_amount: number;
+  message: string;
+}
+
+function mapBackendCouponToFrontend(raw: BackendCouponResponse): Coupon {
+  return {
+    code: raw.code,
+    type: raw.discount_type === 'percentage' ? 'PERCENT' : 'FIXED',
+    value: Number(raw.discount_value),
+    minSpend: Number(raw.min_order_amount || 0),
+    description:
+      raw.discount_type === 'percentage'
+        ? `Giảm ${raw.discount_value}% cho đơn từ ${Number(raw.min_order_amount).toLocaleString('vi-VN')}đ`
+        : `Giảm ${Number(raw.discount_value).toLocaleString('vi-VN')}đ cho đơn từ ${Number(raw.min_order_amount).toLocaleString('vi-VN')}đ`,
+    expiryDate: raw.end_date || 'Không thời hạn',
+    isActive: raw.is_active,
+  };
+}
 
 export const couponService = {
+  /**
+   * Lấy danh sách mã giảm giá đang hoạt động
+   */
   async getCoupons(): Promise<Coupon[]> {
-    await delay(150);
-    return getStoredCoupons();
+    if (isMockMode()) {
+      return mockStore.getCoupons();
+    }
+
+    try {
+      const res = await apiClient.get<BackendCouponResponse[]>('/api/coupons');
+      return (res || []).map(mapBackendCouponToFrontend);
+    } catch {
+      return [];
+    }
   },
 
+  /**
+   * Xác thực mã giảm giá
+   */
   async validateCoupon(code: string, subtotal: number): Promise<{ coupon: Coupon; discountAmount: number }> {
-    await delay(250);
-    const coupons = getStoredCoupons();
-    const coupon = coupons.find(
-      (c) => c.code.toUpperCase() === code.toUpperCase().trim() && c.isActive
-    );
-
-    if (!coupon) {
-      throw new Error('Mã giảm giá không tồn tại hoặc đã hết hạn!');
+    if (isMockMode()) {
+      return mockStore.validateCoupon(code, subtotal);
     }
 
-    if (subtotal < coupon.minSpend) {
-      throw new Error(
-        `Mã này áp dụng cho đơn hàng tối thiểu ${coupon.minSpend.toLocaleString('vi-VN')} VNĐ!`
-      );
-    }
+    const payload = {
+      code: code.trim().toUpperCase(),
+      order_amount: subtotal,
+    };
 
-    let discountAmount = 0;
-    if (coupon.type === 'PERCENT') {
-      discountAmount = (subtotal * coupon.value) / 100;
-    } else {
-      discountAmount = coupon.value;
-    }
+    const res = await apiClient.post<BackendCouponValidateResponse>('/api/coupons/validate', payload);
 
-    return { coupon, discountAmount: Math.min(discountAmount, subtotal) };
-  }
+    const coupon: Coupon = {
+      code: res.code,
+      type: res.discount_type === 'percentage' ? 'PERCENT' : 'FIXED',
+      value: Number(res.discount_value),
+      minSpend: 0,
+      description: res.message,
+      expiryDate: '',
+      isActive: true,
+    };
+
+    return {
+      coupon,
+      discountAmount: Number(res.discount_amount),
+    };
+  },
 };

@@ -1,7 +1,7 @@
 export type UserRole = 'USER' | 'ADMIN';
 export type OrderStatus = 'Chờ xác nhận' | 'Đã xác nhận' | 'Đang giao' | 'Đã giao' | 'Đã hủy';
 export type PaymentMethod = 'COD' | 'ONLINE_MOCK';
-export type PaymentStatus = 'Chưa thanh toán' | 'Đã thanh toán';
+export type PaymentStatus = 'Chưa thanh toán' | 'Đã thanh toán' | 'Đã thanh toán (mô phỏng)' | 'Đã hoàn tiền';
 
 export interface Address {
   id: string;

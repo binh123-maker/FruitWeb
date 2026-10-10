@@ -15,7 +15,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-semibold text-slate-700">
+          <label htmlFor={inputId} className="text-xs font-bold text-slate-700 tracking-wide">
             {label} {props.required && <span className="text-rose-500">*</span>}
           </label>
         )}
@@ -32,19 +32,19 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               leftIcon ? 'pl-10' : ''
             } ${rightIcon ? 'pr-10' : ''} ${
               error
-                ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200'
-                : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-100 hover:border-slate-300'
+                ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-200 bg-rose-50/20'
+                : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-500/20 hover:border-slate-300'
             } ${className}`}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3.5 text-slate-400 flex items-center justify-center">
+            <div className="absolute right-3.5 text-slate-400 flex items-center justify-center z-10">
               {rightIcon}
             </div>
           )}
         </div>
         {error ? (
-          <span className="text-xs font-medium text-rose-500 mt-0.5">{error}</span>
+          <span className="text-xs font-semibold text-rose-500 mt-0.5">{error}</span>
         ) : helperText ? (
           <span className="text-xs text-slate-500 mt-0.5">{helperText}</span>
         ) : null}
