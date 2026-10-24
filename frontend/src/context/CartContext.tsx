@@ -21,6 +21,7 @@ interface CartContextType {
   clearCart: () => Promise<void>;
   applyCoupon: (code: string) => Promise<void>;
   removeCoupon: () => void;
+  refreshCart: (syncGuest?: boolean) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -32,10 +33,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
-  const fetchCart = async () => {
+  const fetchCart = async (syncGuest = false) => {
     try {
-      const items = await cartService.getCart();
-      setCart(items);
+      if (syncGuest) {
+        const items = await cartService.syncGuestCartToServer();
+        setCart(items);
+      } else {
+        const items = await cartService.getCart();
+        setCart(items);
+      }
     } catch (error) {
       console.error('Failed to load cart', error);
     } finally {
@@ -170,6 +176,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearCart,
         applyCoupon,
         removeCoupon,
+        refreshCart: fetchCart,
       }}
     >
       {children}

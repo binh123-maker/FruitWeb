@@ -180,6 +180,49 @@ export const Checkout: React.FC = () => {
               </div>
             )}
 
+            {/* Saved Address Selector */}
+            {user?.addresses && user.addresses.length > 0 && (
+              <div className="flex flex-col gap-1.5 p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+                <label className="text-xs font-bold text-slate-700">
+                  Chọn từ sổ địa chỉ đã lưu:
+                </label>
+                <select
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    if (!selectedId) return;
+                    const addr = user.addresses?.find((a) => a.id === selectedId);
+                    if (addr) {
+                      const addrFull = `${addr.address} ${addr.ward} ${addr.district} ${addr.province}`.toLowerCase();
+                      const hasPhuXuan = addrFull.includes('phú xuân') || addrFull.includes('phu xuan');
+                      const hasDakLak = addrFull.includes('đắk lắk') || addrFull.includes('đăk lăk') || addrFull.includes('dak lak') || addrFull.includes('daklak');
+
+                      if (!hasPhuXuan || !hasDakLak) {
+                        setAddressError(`Địa chỉ đã lưu "${addr.address}, ${addr.ward}, ${addr.province}" nằm ngoài phạm vi phục vụ (chỉ giao Xã Phú Xuân, Đắk Lắk). Vui lòng cập nhật hoặc nhập địa chỉ trong Xã Phú Xuân.`);
+                      } else {
+                        setAddressError(null);
+                        setFormData((prev) => ({
+                          ...prev,
+                          fullName: addr.fullName,
+                          phone: addr.phone,
+                          address: addr.address,
+                          province: 'Đắk Lắk',
+                          ward: 'Xã Phú Xuân',
+                        }));
+                      }
+                    }
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 cursor-pointer"
+                >
+                  <option value="">-- Chọn địa chỉ đã lưu hoặc tự điền bên dưới --</option>
+                  {user.addresses.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.fullName} ({a.phone}) - {a.address}, {a.ward}, {a.province} {a.isDefault ? '★ Mặc định' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Input
                 label="Họ và tên người nhận"
@@ -206,26 +249,30 @@ export const Checkout: React.FC = () => {
             />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                label="Tỉnh / Thành phố"
-                required
-                value={formData.province}
-                onChange={(e) => {
-                  setFormData({ ...formData, province: e.target.value });
-                  setAddressError(null);
-                }}
-                placeholder="Đắk Lắk"
-              />
-              <Input
-                label="Xã / Thị trấn"
-                required
-                value={formData.ward}
-                onChange={(e) => {
-                  setFormData({ ...formData, ward: e.target.value });
-                  setAddressError(null);
-                }}
-                placeholder="Xã Phú Xuân"
-              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-700 tracking-wide">
+                  Tỉnh / Thành phố <span className="text-xs text-emerald-600 font-semibold">(Cố định)</span>
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value="Đắk Lắk"
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-slate-600 cursor-not-allowed select-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-slate-700 tracking-wide">
+                  Xã / Thị trấn <span className="text-xs text-emerald-600 font-semibold">(Cố định)</span>
+                </label>
+                <input
+                  type="text"
+                  disabled
+                  value="Xã Phú Xuân"
+                  className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-slate-600 cursor-not-allowed select-none"
+                />
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-bold text-slate-700 tracking-wide">
                   Thôn / Xóm / Buôn <span className="text-rose-500">*</span>
@@ -243,11 +290,11 @@ export const Checkout: React.FC = () => {
             </div>
 
             <Input
-              label="Địa chỉ cụ thể (Số nhà, đường, điểm mốc nhận quả)"
+              label="Địa chỉ chi tiết (Số nhà, đường, điểm mốc)"
               required
               value={formData.address}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Ví dụ: Số 12, gần ngã tư Thôn 4, nhà đối diện trường học..."
+              placeholder="Ví dụ: Số 12, ngã tư Thôn 4, nhà đối diện trường tiểu học..."
             />
 
             <div className="flex flex-col gap-1.5">

@@ -1,34 +1,84 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { orderService } from '../../services/orderService';
 import type { Order, OrderStatus, PaymentStatus } from '../../types';
 import { Badge } from '../../components/common/Badge';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { useToast } from '../../context/ToastContext';
-import { RefreshCw, Search, Clock, CreditCard, Banknote, MapPin } from 'lucide-react';
+import { AdminOrderDetailModal } from '../../components/admin/AdminOrderDetailModal';
+import { RefreshCw, Search, Clock, CreditCard, Banknote, MapPin, Eye } from 'lucide-react';
 
 export const AdminOrders: React.FC = () => {
   const { showToast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const knownOrderIdsRef = useRef<Set<string>>(new Set());
+  const isInitialRef = useRef(true);
+
+  const playNotificationSound = useCallback(() => {
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {
+      // Audio might be blocked by browser policy until interaction
+    }
+  }, []);
 
   const fetchOrdersSilently = useCallback(async () => {
     try {
       setIsRefreshing(true);
       const res = await orderService.getOrders();
+
+      if (!isInitialRef.current) {
+        // Find any newly arrived orders
+        const addedOrders = res.filter((o) => !knownOrderIdsRef.current.has(o.id));
+        if (addedOrders.length > 0) {
+          playNotificationSound();
+          const latest = addedOrders[0];
+          showToast(
+            `🔔 Đơn hàng mới: #${latest.id} - ${latest.customerName} (${latest.total.toLocaleString('vi-VN')}đ)`,
+            'info'
+          );
+        }
+      }
+
+      knownOrderIdsRef.current = new Set(res.map((o) => o.id));
+      isInitialRef.current = false;
       setOrders(res);
       setLastUpdated(new Date());
+
+      // If user is currently viewing an order in modal, keep its data fresh without closing
+      setSelectedOrder((prev) => {
+        if (!prev) return null;
+        return res.find((o) => o.id === prev.id) || prev;
+      });
     } catch (err) {
       console.error('Lỗi tự động làm mới đơn hàng:', err);
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [playNotificationSound, showToast]);
 
-  // Polling setup: 6000ms (6 seconds) with clean unmount
+  // Polling setup: 5000ms (5 seconds) with clean unmount
   useEffect(() => {
     let isMounted = true;
 
@@ -36,8 +86,17 @@ export const AdminOrders: React.FC = () => {
       try {
         const res = await orderService.getOrders();
         if (isMounted) {
+          knownOrderIdsRef.current = new Set(res.map((o) => o.id));
+          isInitialRef.current = false;
           setOrders(res);
           setLastUpdated(new Date());
+
+          // Check if URL has ?orderId=... to auto-open modal
+          const queryOrderId = searchParams.get('orderId');
+          if (queryOrderId) {
+            const found = res.find((o) => o.id === queryOrderId);
+            if (found) setSelectedOrder(found);
+          }
         }
       } catch (err) {
         console.error('Lỗi tải danh sách đơn hàng ban đầu:', err);
@@ -52,13 +111,13 @@ export const AdminOrders: React.FC = () => {
       if (isMounted) {
         fetchOrdersSilently();
       }
-    }, 6000);
+    }, 5000);
 
     return () => {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [fetchOrdersSilently]);
+  }, [fetchOrdersSilently, searchParams]);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     try {
@@ -97,6 +156,14 @@ export const AdminOrders: React.FC = () => {
     });
   }, [orders, statusFilter, searchTerm]);
 
+  const handleCloseModal = () => {
+    setSelectedOrder(null);
+    if (searchParams.has('orderId')) {
+      searchParams.delete('orderId');
+      setSearchParams(searchParams);
+    }
+  };
+
   if (isInitialLoading) {
     return <LoadingSpinner label="Đang tải danh sách đơn hàng toàn hệ thống..." size="lg" />;
   }
@@ -118,11 +185,11 @@ export const AdminOrders: React.FC = () => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
           </span>
-          <span className="font-bold text-slate-700">Tự động đồng bộ (6s)</span>
+          <span className="font-bold text-slate-700">Tự động đồng bộ (5s)</span>
           <button
             onClick={fetchOrdersSilently}
             disabled={isRefreshing}
-            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors"
+            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
             title="Làm mới ngay"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-600' : ''}`} />
@@ -176,13 +243,14 @@ export const AdminOrders: React.FC = () => {
               <th className="py-3 px-4">Phương Thức</th>
               <th className="py-3 px-4">Trạng Thái Thanh Toán</th>
               <th className="py-3 px-4">Tiến Độ Đơn</th>
+              <th className="py-3 px-4 text-center">Chi Tiết</th>
               <th className="py-3 px-4 text-right">Đổi Tiến Độ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 font-medium">
             {filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-slate-400 font-medium">
+                <td colSpan={9} className="py-8 text-center text-slate-400 font-medium">
                   {orders.length === 0 ? 'Chưa có đơn hàng nào trong hệ thống' : 'Không có đơn hàng nào khớp bộ lọc'}
                 </td>
               </tr>
@@ -265,6 +333,19 @@ export const AdminOrders: React.FC = () => {
                     </Badge>
                   </td>
 
+                  {/* View Details Eye Button */}
+                  <td className="py-3 px-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrder(o)}
+                      className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs border border-emerald-100"
+                      title="Xem chi tiết đơn hàng"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span className="text-[11px]">Xem</span>
+                    </button>
+                  </td>
+
                   {/* Order Status Action Selector */}
                   <td className="py-3 px-4 text-right">
                     <select
@@ -290,7 +371,17 @@ export const AdminOrders: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Complete Order Detail Modal */}
+      <AdminOrderDetailModal
+        order={selectedOrder}
+        isOpen={!!selectedOrder}
+        onClose={handleCloseModal}
+        onStatusChange={handleStatusChange}
+        onPaymentStatusChange={handlePaymentStatusChange}
+      />
     </div>
   );
 };
+
 export default AdminOrders;

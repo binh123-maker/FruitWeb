@@ -8,6 +8,7 @@ export interface BackendOrderItem {
   product_name: string;
   product_slug?: string;
   product_image?: string;
+  product_unit?: string;
   quantity: number;
   unit_price: number;
   subtotal: number;
@@ -23,6 +24,7 @@ export interface BackendOrder {
   total_amount: number;
   shipping_address?: string;
   customer_name?: string;
+  customer_email?: string;
   phone?: string;
   payment_method?: string;
   payment_status?: string;
@@ -75,7 +77,7 @@ export function mapBackendOrderToFrontend(raw: BackendOrder): Order {
     userId: String(raw.user_id),
     customerName: raw.customer_name || 'Khách hàng',
     customerPhone: raw.phone || '',
-    customerEmail: '',
+    customerEmail: raw.customer_email || '',
     shippingAddress: raw.shipping_address || '',
     items: (raw.items || []).map((it) => ({
       productId: String(it.product_id),
@@ -83,7 +85,7 @@ export function mapBackendOrderToFrontend(raw: BackendOrder): Order {
       productImage: it.product_image || '',
       price: Number(it.unit_price),
       quantity: Number(it.quantity),
-      unit: 'Kg',
+      unit: it.product_unit || 'Kg',
     })),
     subtotal: Number(raw.subtotal !== undefined && raw.subtotal !== null ? raw.subtotal : raw.total_amount),
     shippingFee: 0,

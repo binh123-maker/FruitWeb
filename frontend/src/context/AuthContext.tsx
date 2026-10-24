@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Address } from '../types';
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
+import { cartService } from '../services/cartService';
 
 interface AuthContextType {
   user: User | null;
@@ -39,12 +40,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, pass: string) => {
     const loggedUser = await authService.login(email, pass);
     setUser(loggedUser);
+    try {
+      await cartService.syncGuestCartToServer();
+    } catch (err) {
+      console.warn('Lỗi đồng bộ giỏ hàng khi đăng nhập:', err);
+    }
     return loggedUser;
   };
 
   const register = async (data: { name: string; email: string; phone: string; password: string }) => {
     const newUser = await authService.register(data);
     setUser(newUser);
+    try {
+      await cartService.syncGuestCartToServer();
+    } catch (err) {
+      console.warn('Lỗi đồng bộ giỏ hàng khi đăng ký:', err);
+    }
     return newUser;
   };
 

@@ -298,3 +298,39 @@ def test_admin_update_payment_status(client, user_headers, admin_headers, apple_
 def test_non_admin_cannot_access_admin_orders(client, user_headers):
     res = client.get("/api/orders/admin/all", headers=user_headers)
     assert res.status_code == 403
+
+
+def test_admin_can_access_any_user_order_detail(client, user_headers, admin_headers, apple_product):
+    payload = {
+        "items": [{"product_id": apple_product.id, "quantity": 3}],
+        "shipping_address": "Số 34, Thôn 4, Xã Phú Xuân, Đắk Lắk",
+        "customer_name": "Khách Test",
+        "phone": "0987112233",
+        "payment_method": "COD",
+    }
+    create_res = client.post("/api/orders", json=payload, headers=user_headers)
+    assert create_res.status_code == 201
+    order_id = create_res.json()["id"]
+
+    # Admin accesses the user's order
+    admin_res = client.get(f"/api/orders/{order_id}", headers=admin_headers)
+    assert admin_res.status_code == 200
+    data = admin_res.json()
+    assert data["id"] == order_id
+    assert data["customer_name"] == "Khách Test"
+    assert data["phone"] == "0987112233"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["quantity"] == 3
+    assert data["items"][0]["unit_price"] == 90000.0
+    assert data["items"][0]["product_unit"] == "kg"
+    assert data["total_amount"] == 270000.0
+
+
+def test_order_detail_not_found(client, admin_headers, user_headers):
+    res_admin = client.get("/api/orders/999999", headers=admin_headers)
+    assert res_admin.status_code == 404
+    assert res_admin.json()["detail"] == "Đơn hàng không tồn tại"
+
+    res_user = client.get("/api/orders/999999", headers=user_headers)
+    assert res_user.status_code == 404
+

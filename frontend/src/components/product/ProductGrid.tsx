@@ -12,6 +12,7 @@ interface ProductGridProps {
 export const ProductGrid: React.FC<ProductGridProps> = ({
   products,
   isLoading = false,
+  emptyText = 'Hiện chưa có sản phẩm nào trong danh mục này.',
 }) => {
   if (isLoading) {
     return (
@@ -24,7 +25,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   }
 
   if (products.length === 0) {
-    return null;
+    return (
+      <div className="py-10 text-center text-xs sm:text-sm text-slate-500 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+        {emptyText}
+      </div>
+    );
   }
 
   return (

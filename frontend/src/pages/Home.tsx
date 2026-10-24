@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -11,6 +11,8 @@ import {
   Copy,
   Check,
   MapPin,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { Product, Category } from '../types';
 import { productService } from '../services/productService';
@@ -21,30 +23,88 @@ import { useToast } from '../context/ToastContext';
 export const Home: React.FC = () => {
   const { showToast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredError, setFeaturedError] = useState<string | null>(null);
+
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [bestSellersLoading, setBestSellersLoading] = useState(true);
+  const [bestSellersError, setBestSellersError] = useState<string | null>(null);
+
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [cats, featured, best] = await Promise.all([
-          productService.getCategories(),
-          productService.getFeaturedProducts(8),
-          productService.getBestSellers(8),
-        ]);
+  const fetchCategories = useCallback(async (isMounted: () => boolean) => {
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+    try {
+      const cats = await productService.getCategories();
+      if (isMounted()) {
         setCategories(cats);
-        setFeaturedProducts(featured);
-        setBestSellers(best);
-      } catch (error) {
-        console.error('Error loading home data:', error);
-      } finally {
-        setIsLoading(false);
       }
-    };
-    fetchData();
+    } catch (err: any) {
+      if (isMounted()) {
+        setCategoriesError(err?.message || 'Không thể tải danh mục sản phẩm');
+      }
+    } finally {
+      if (isMounted()) {
+        setCategoriesLoading(false);
+      }
+    }
   }, []);
+
+  const fetchFeatured = useCallback(async (isMounted: () => boolean) => {
+    setFeaturedLoading(true);
+    setFeaturedError(null);
+    try {
+      const prods = await productService.getFeaturedProducts(8);
+      if (isMounted()) {
+        setFeaturedProducts(prods);
+      }
+    } catch (err: any) {
+      if (isMounted()) {
+        setFeaturedError(err?.message || 'Không thể tải sản phẩm nổi bật');
+      }
+    } finally {
+      if (isMounted()) {
+        setFeaturedLoading(false);
+      }
+    }
+  }, []);
+
+  const fetchBestSellers = useCallback(async (isMounted: () => boolean) => {
+    setBestSellersLoading(true);
+    setBestSellersError(null);
+    try {
+      const prods = await productService.getBestSellers(8);
+      if (isMounted()) {
+        setBestSellers(prods);
+      }
+    } catch (err: any) {
+      if (isMounted()) {
+        setBestSellersError(err?.message || 'Không thể tải sản phẩm bán chạy');
+      }
+    } finally {
+      if (isMounted()) {
+        setBestSellersLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const isMounted = () => mounted;
+
+    fetchCategories(isMounted);
+    fetchFeatured(isMounted);
+    fetchBestSellers(isMounted);
+
+    return () => {
+      mounted = false;
+    };
+  }, [fetchCategories, fetchFeatured, fetchBestSellers]);
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard?.writeText(code);
@@ -199,41 +259,77 @@ export const Home: React.FC = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-5">
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/categories/${cat.slug}`}
-              className="group relative flex flex-col rounded-2xl overflow-hidden bg-white border border-slate-100 shadow-xs hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 hover:-translate-y-1 transition-all duration-300"
+        {categoriesError ? (
+          <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Không thể tải danh mục sản phẩm</p>
+                <p className="text-xs text-rose-600 mt-0.5">{categoriesError}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchCategories(() => true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
             >
-              <div className="relative aspect-4/3 overflow-hidden bg-slate-50">
-                <img
-                  src={cat.image}
-                  alt={cat.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    const fallback =
-                      'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
-                    if (!target.src.includes('1610832958506')) {
-                      target.src = fallback;
-                    }
-                  }}
-                />
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        ) : categoriesLoading ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="rounded-2xl bg-white border border-slate-100 overflow-hidden shadow-xs animate-pulse">
+                <div className="aspect-4/3 bg-slate-200" />
+                <div className="p-3.5 flex flex-col items-center gap-2">
+                  <div className="h-4 w-24 bg-slate-200 rounded" />
+                  <div className="h-3 w-16 bg-slate-100 rounded" />
+                </div>
               </div>
-              <div className="p-3.5 text-center flex flex-col items-center">
-                <h3 className="font-extrabold text-slate-900 text-sm group-hover:text-emerald-700 transition-colors line-clamp-1">
-                  {cat.name}
-                </h3>
-                {cat.productCount !== undefined && (
-                  <span className="text-[11px] font-semibold text-slate-400 mt-0.5">
-                    {cat.productCount} sản phẩm
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : categories.length === 0 ? (
+          <div className="py-10 text-center text-xs sm:text-sm text-slate-500 bg-slate-50/70 rounded-2xl border border-dashed border-slate-200">
+            Hiện chưa có danh mục sản phẩm nào.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-5">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`/categories/${cat.slug}`}
+                className="group relative flex flex-col rounded-2xl overflow-hidden bg-white border border-slate-100 shadow-xs hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-950/5 hover:-translate-y-1 transition-all duration-300"
+              >
+                <div className="relative aspect-4/3 overflow-hidden bg-slate-50">
+                  <img
+                    src={cat.image}
+                    alt={cat.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-108"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      const fallback =
+                        'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
+                      if (!target.src.includes('1610832958506')) {
+                        target.src = fallback;
+                      }
+                    }}
+                  />
+                </div>
+                <div className="p-3.5 text-center flex flex-col items-center">
+                  <h3 className="font-extrabold text-slate-900 text-sm group-hover:text-emerald-700 transition-colors line-clamp-1">
+                    {cat.name}
+                  </h3>
+                  {cat.productCount !== undefined && (
+                    <span className="text-[11px] font-semibold text-slate-400 mt-0.5">
+                      {cat.productCount} sản phẩm
+                    </span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Products Section */}
@@ -256,7 +352,31 @@ export const Home: React.FC = () => {
           </Link>
         </div>
 
-        <ProductGrid products={featuredProducts} isLoading={isLoading} />
+        {featuredError ? (
+          <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Không thể tải sản phẩm nổi bật</p>
+                <p className="text-xs text-rose-600 mt-0.5">{featuredError}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchFeatured(() => true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        ) : (
+          <ProductGrid
+            products={featuredProducts}
+            isLoading={featuredLoading}
+            emptyText="Hiện chưa có sản phẩm nổi bật nào."
+          />
+        )}
       </section>
 
       {/* Special Promotional Banner with Real Coupon */}
@@ -319,7 +439,31 @@ export const Home: React.FC = () => {
           </Link>
         </div>
 
-        <ProductGrid products={bestSellers} isLoading={isLoading} />
+        {bestSellersError ? (
+          <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Không thể tải sản phẩm bán chạy</p>
+                <p className="text-xs text-rose-600 mt-0.5">{bestSellersError}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchBestSellers(() => true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Thử lại</span>
+            </button>
+          </div>
+        ) : (
+          <ProductGrid
+            products={bestSellers}
+            isLoading={bestSellersLoading}
+            emptyText="Hiện chưa có sản phẩm bán chạy nào."
+          />
+        )}
       </section>
 
       {/* Why Choose FreshFruit Section */}

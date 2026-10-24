@@ -25,9 +25,9 @@ export const Profile: React.FC = () => {
     fullName: user?.name || '',
     phone: user?.phone || '',
     address: '',
-    province: 'Thành phố Hồ Chí Minh',
-    district: 'Quận 1',
-    ward: 'Phường Bến Nghé',
+    province: 'Đắk Lắk',
+    district: 'Huyện Krông Năng',
+    ward: 'Xã Phú Xuân',
     isDefault: false,
   });
 
@@ -67,9 +67,9 @@ export const Profile: React.FC = () => {
         fullName: user?.name || '',
         phone: user?.phone || '',
         address: '',
-        province: 'Thành phố Hồ Chí Minh',
-        district: 'Quận 1',
-        ward: 'Phường Bến Nghé',
+        province: 'Đắk Lắk',
+        district: 'Huyện Krông Năng',
+        ward: 'Xã Phú Xuân',
         isDefault: false,
       });
     } catch (err: any) {
@@ -205,51 +205,72 @@ export const Profile: React.FC = () => {
                 {!user?.addresses || user.addresses.length === 0 ? (
                   <p className="text-xs text-slate-500 italic py-4">Bạn chưa lưu địa chỉ nhận hàng nào.</p>
                 ) : (
-                  user.addresses.map((addr) => (
-                    <div
-                      key={addr.id}
-                      className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
-                        addr.isDefault
-                          ? 'border-emerald-500 bg-emerald-50/40 shadow-xs'
-                          : 'border-slate-200/90 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex flex-col gap-1 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-slate-900 text-sm">{addr.fullName}</span>
-                          <span className="text-slate-500 font-semibold">({addr.phone})</span>
-                          {addr.isDefault && (
-                            <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
-                              Mặc định
+                  user.addresses.map((addr) => {
+                    const addrFull = `${addr.address} ${addr.ward} ${addr.district} ${addr.province}`.toLowerCase();
+                    const hasPhuXuan = addrFull.includes('phú xuân') || addrFull.includes('phu xuan');
+                    const hasDakLak = addrFull.includes('đắk lắk') || addrFull.includes('đăk lăk') || addrFull.includes('dak lak') || addrFull.includes('daklak');
+                    const isInScope = hasPhuXuan && hasDakLak;
+
+                    return (
+                      <div
+                        key={addr.id}
+                        className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all ${
+                          addr.isDefault
+                            ? 'border-emerald-500 bg-emerald-50/40 shadow-xs'
+                            : 'border-slate-200/90 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex flex-col gap-1 text-xs">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-slate-900 text-sm">{addr.fullName}</span>
+                            <span className="text-slate-500 font-semibold">({addr.phone})</span>
+                            {addr.isDefault && (
+                              <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-md">
+                                Mặc định
+                              </span>
+                            )}
+                            {isInScope ? (
+                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                Xã Phú Xuân (Đủ điều kiện giao)
+                              </span>
+                            ) : (
+                              <span className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                Ngoài phạm vi giao hàng
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-slate-600">
+                            {addr.address}, {addr.ward}, {addr.district}, {addr.province}
+                          </span>
+                          {!isInScope && (
+                            <span className="text-[11px] text-amber-700 font-medium">
+                              ⚠️ Địa chỉ này thuộc khu vực ngoài phạm vi phục vụ. Khi đặt hàng, vui lòng dùng địa chỉ tại Xã Phú Xuân, Đắk Lắk.
                             </span>
                           )}
                         </div>
-                        <span className="text-slate-600">
-                          {addr.address}, {addr.ward}, {addr.district}, {addr.province}
-                        </span>
-                      </div>
 
-                      <div className="flex items-center gap-2.5 shrink-0">
-                        {!addr.isDefault && (
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          {!addr.isDefault && isInScope && (
+                            <button
+                              type="button"
+                              onClick={() => updateAddress(addr.id, { isDefault: true })}
+                              className="text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
+                            >
+                              Đặt làm mặc định
+                            </button>
+                          )}
                           <button
                             type="button"
-                            onClick={() => updateAddress(addr.id, { isDefault: true })}
-                            className="text-xs font-bold text-emerald-700 hover:underline cursor-pointer"
+                            onClick={() => deleteAddress(addr.id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Xóa địa chỉ"
                           >
-                            Đặt làm mặc định
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => deleteAddress(addr.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                          title="Xóa địa chỉ"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>
@@ -311,22 +332,42 @@ export const Profile: React.FC = () => {
             value={addressForm.phone}
             onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
           />
+          {/* Delivery Scope Info */}
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-start gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-600 mt-1 shrink-0" />
+            <div>
+              <strong>Phạm vi phục vụ:</strong> FreshFruit chỉ giao hàng trong <strong>Xã Phú Xuân, Tỉnh Đắk Lắk</strong> (Cơ sở tại Số 34, Thôn 4). Tỉnh và Xã được khóa cố định.
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Input
-              label="Tỉnh / Thành phố"
-              value={addressForm.province}
-              onChange={(e) => setAddressForm({ ...addressForm, province: e.target.value })}
-            />
-            <Input
-              label="Quận / Huyện"
-              value={addressForm.district}
-              onChange={(e) => setAddressForm({ ...addressForm, district: e.target.value })}
-            />
-            <Input
-              label="Phường / Xã"
-              value={addressForm.ward}
-              onChange={(e) => setAddressForm({ ...addressForm, ward: e.target.value })}
-            />
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-slate-700">Tỉnh / Thành phố</label>
+              <input
+                type="text"
+                disabled
+                value="Đắk Lắk"
+                className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-slate-600 cursor-not-allowed"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-slate-700">Huyện / Thị xã</label>
+              <input
+                type="text"
+                disabled
+                value="Huyện Krông Năng"
+                className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-slate-600 cursor-not-allowed"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-bold text-slate-700">Xã / Thị trấn</label>
+              <input
+                type="text"
+                disabled
+                value="Xã Phú Xuân"
+                className="w-full bg-slate-100 border border-slate-200 rounded-xl p-2.5 text-xs sm:text-sm font-semibold text-slate-600 cursor-not-allowed"
+              />
+            </div>
           </div>
           <Input
             label="Địa chỉ cụ thể (Số nhà, tên đường)"

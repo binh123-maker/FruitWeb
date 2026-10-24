@@ -27,6 +27,7 @@ class OrderItemResponse(BaseModel):
     product_name: str
     product_slug: Optional[str] = None
     product_image: Optional[str] = None
+    product_unit: Optional[str] = "kg"
     quantity: int
     unit_price: float
     subtotal: float
@@ -44,6 +45,7 @@ class OrderResponse(BaseModel):
     total_amount: float
     shipping_address: Optional[str] = None
     customer_name: Optional[str] = None
+    customer_email: Optional[str] = None
     phone: Optional[str] = None
     payment_method: Optional[str] = "COD"
     payment_status: Optional[str] = "unpaid"

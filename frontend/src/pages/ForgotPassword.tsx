@@ -23,7 +23,7 @@ export const ForgotPassword: React.FC = () => {
     setIsLoading(true);
     try {
       await authService.sendResetOtp(email.trim());
-      showToast('Mã OTP khôi phục đã được gửi tới email của bạn (Mã demo: 123456)', 'info');
+      showToast('Mã OTP khôi phục đã được gửi tới email của bạn', 'info');
       setStep(2);
     } catch (err: any) {
       showToast(err.message || 'Lỗi gửi mã OTP', 'error');

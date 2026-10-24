@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Input } from '../components/common/Input';
 import { Button } from '../components/common/Button';
-import { Leaf, LogIn, UserCheck, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Leaf, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
@@ -38,11 +38,6 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = (quickEmail: string, quickPass: string) => {
-    setEmail(quickEmail);
-    setPassword(quickPass);
-  };
-
   return (
     <div className="max-w-md mx-auto px-4 py-12">
       <div className="bg-white p-7 sm:p-9 rounded-3xl border border-slate-100 shadow-xl flex flex-col gap-6">
@@ -61,7 +56,7 @@ export const Login: React.FC = () => {
             label="Địa chỉ Email"
             type="email"
             required
-            placeholder="admin@fruitweb.com hoặc user1@fruitweb.com"
+            placeholder="example@gmail.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
@@ -108,41 +103,14 @@ export const Login: React.FC = () => {
           </Button>
         </form>
 
-        {/* Quick Demo Login Preset Buttons */}
-        <div className="pt-4 border-t border-slate-100 flex flex-col gap-2.5">
-          <span className="text-[11px] font-black uppercase text-slate-400 text-center tracking-wider">
-            Tài Khoản Dùng Thử Nhanh (Demo)
-          </span>
-
-          {/* <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('user1@fruitweb.com', 'Password123!')}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-emerald-700 hover:border-emerald-300 transition-all cursor-pointer"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Khách Hàng</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('admin@fruitweb.com', 'AdminPassword123!')}
-              className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-slate-50 hover:bg-purple-50 border border-slate-200 text-xs font-bold text-slate-700 hover:text-purple-700 hover:border-purple-300 transition-all cursor-pointer"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-              <span>Quản Trị Admin</span>
-            </button>
-          </div> */}
-        </div>
-
-          {/* Footer Link */}
-          <div className="text-center text-xs text-slate-500 pt-1">
-            Chưa có tài khoản?{' '}
-            <Link to="/register" className="font-extrabold text-emerald-700 hover:underline">
-              Đăng ký tài khoản mới
-            </Link>
-          </div>
+        {/* Footer Link */}
+        <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-100">
+          Chưa có tài khoản?{' '}
+          <Link to="/register" className="font-extrabold text-emerald-700 hover:underline">
+            Đăng ký tài khoản mới
+          </Link>
         </div>
       </div>
-      );
+    </div>
+  );
 };

@@ -46,7 +46,7 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 // Main Store Layout Wrapper (Header + Page + Footer)
 const MainStoreLayout: React.FC = () => {
   return (
-    <div className="min-h-screen flex flex-col bg-transparent font-sans text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-800 antialiased selection:bg-emerald-500 selection:text-white">
       <Header />
       <main className="flex-1">
         <Outlet />

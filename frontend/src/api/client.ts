@@ -109,6 +109,8 @@ export interface RequestOptions extends Omit<RequestInit, 'body'> {
   params?: Record<string, any>;
   skipAuth?: boolean;
   _retry?: boolean;
+  _retryCount?: number;
+  timeoutMs?: number;
 }
 
 /**
@@ -149,10 +151,15 @@ function extractErrorMessage(status: number, data: any): string {
       return 'Dữ liệu gửi lên không đúng định dạng.';
     case 500:
       return 'Lỗi máy chủ nội bộ. Vui lòng thử lại sau.';
+    case 502:
+    case 503:
+      return 'Dịch vụ máy chủ đang khởi động hoặc tạm thời gián đoạn. Vui lòng thử lại sau giây lát.';
     default:
       return `Lỗi hệ thống (${status}).`;
   }
 }
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Core HTTP Request method
@@ -161,7 +168,16 @@ export async function apiRequest<T = any>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
-  const { body, params, skipAuth = false, _retry = false, headers = {}, ...rest } = options;
+  const {
+    body,
+    params,
+    skipAuth = false,
+    _retry = false,
+    _retryCount = 0,
+    timeoutMs = 12000,
+    headers = {},
+    ...rest
+  } = options;
 
   let url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
@@ -198,15 +214,50 @@ export async function apiRequest<T = any>(
     }
   }
 
+  const method = (rest.method || 'GET').toUpperCase();
+  const isIdempotent = method === 'GET' || method === 'HEAD';
+
   let response: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     response = await fetch(url, {
       ...rest,
+      method,
       headers: reqHeaders,
       body: formattedBody,
+      signal: rest.signal || controller.signal,
     });
   } catch (err: any) {
+    clearTimeout(timeoutId);
+
+    // Auto-retry transient network failure for GET requests (max 2 retries)
+    if (isIdempotent && _retryCount < 2) {
+      const backoff = (_retryCount + 1) * 350;
+      await sleep(backoff);
+      return apiRequest<T>(endpoint, {
+        ...options,
+        _retryCount: _retryCount + 1,
+      });
+    }
+
+    if (err?.name === 'AbortError') {
+      throw new ApiError(0, 'Kết nối đến máy chủ bị quá thời gian (timeout). Vui lòng thử lại.');
+    }
     throw new ApiError(0, 'Không thể kết nối đến máy chủ backend. Vui lòng kiểm tra server.');
+  } finally {
+    clearTimeout(timeoutId);
+  }
+
+  // Handle transient 502/503 for GET requests with backoff retry
+  if ((response.status === 502 || response.status === 503) && isIdempotent && _retryCount < 2) {
+    const backoff = (_retryCount + 1) * 400;
+    await sleep(backoff);
+    return apiRequest<T>(endpoint, {
+      ...options,
+      _retryCount: _retryCount + 1,
+    });
   }
 
   // Handle 401 and Token Refresh

@@ -84,14 +84,14 @@ export const authService = {
 
   async verifyResetOtp(_email: string, otp: string): Promise<{ success: boolean }> {
     if (otp !== '123456' && otp !== '888888') {
-      throw new Error('Mã OTP không đúng hoặc đã hết hạn! (Mã thử nghiệm: 123456)');
+      throw new Error('Mã OTP không đúng hoặc đã hết hạn!');
     }
     return { success: true };
   },
 
   async resetPassword(_email: string, otp: string, _newPass: string): Promise<{ success: boolean }> {
     if (otp !== '123456' && otp !== '888888') {
-      throw new Error('Mã OTP không đúng hoặc đã hết hạn! (Thử: 123456)');
+      throw new Error('Mã OTP không đúng hoặc đã hết hạn!');
     }
     return { success: true };
   },
