@@ -329,8 +329,9 @@ def test_admin_can_access_any_user_order_detail(client, user_headers, admin_head
 def test_order_detail_not_found(client, admin_headers, user_headers):
     res_admin = client.get("/api/orders/999999", headers=admin_headers)
     assert res_admin.status_code == 404
-    assert res_admin.json()["detail"] == "Đơn hàng không tồn tại"
+    assert res_admin.json().get("message") == "Đơn hàng không tồn tại"
 
     res_user = client.get("/api/orders/999999", headers=user_headers)
     assert res_user.status_code == 404
+
 
