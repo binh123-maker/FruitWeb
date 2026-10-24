@@ -72,7 +72,7 @@ export const Header: React.FC = () => {
           to="/about"
           className="underline hover:text-amber-200 transition-colors ml-1 font-bold shrink-0"
         >
-          Xem bản đồ & cửa hàng →
+          Xem chi tiết →
         </Link>
       </div>
 

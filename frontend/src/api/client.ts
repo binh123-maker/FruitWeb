@@ -4,7 +4,17 @@
  * Token refresh queue, and consistent HTTP error parsing.
  */
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+const getBaseUrl = (): string => {
+  const envUrl = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+  // When running behind Nginx reverse proxy (standard ports, not Vite dev server 5173),
+  // use relative URL so /api is routed correctly to the backend container
+  if (typeof window !== 'undefined' && window.location.port !== '5173') {
+    return '';
+  }
+  return envUrl;
+};
+
+const API_BASE_URL = getBaseUrl();
 
 export const TOKEN_KEYS = {
   ACCESS_TOKEN: 'freshfruit_access_token',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Leaf, Phone, Mail, MapPin, ShieldCheck, Truck, RefreshCw, Award, Globe, Share2 } from 'lucide-react';
+import { Leaf, Phone, Mail, MapPin, ShieldCheck, Truck, RefreshCw, Award, Clock } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -65,10 +65,9 @@ export const Footer: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
             FreshFruit chuyên cung cấp trái cây tươi ngon, ngọt lành tại Xã Phú Xuân, Đắk Lắk. Mang sự tươi mới và dinh dưỡng an lành đến mọi bàn ăn gia đình.
           </p>
-          <div className="flex items-center gap-3 pt-2">
-            <Link to="/about" className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline">
-              Xem vị trí cửa hàng trên bản đồ →
-            </Link>
+          <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
+            <Clock className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>Mở cửa: 07:00 – 21:00 (Thứ 2 – Chủ Nhật)</span>
           </div>
         </div>
 
@@ -90,11 +89,11 @@ export const Footer: React.FC = () => {
           <ul className="flex flex-col gap-2.5 text-xs text-slate-400 font-medium">
             <li><span className="text-slate-400">Giao hàng trong Xã Phú Xuân</span></li>
             <li><span className="text-slate-400">Đổi trả 1-đổi-1 khi dập hỏng</span></li>
-            <li><span className="text-slate-400">Thanh toán COD & Online Mock</span></li>
+            <li><span className="text-slate-400">Thanh toán COD & Online</span></li>
           </ul>
         </div>
 
-        {/* Store Location & Service Area */}
+        {/* Store Contact & Location */}
         <div className="flex flex-col gap-3">
           <h4 className="font-extrabold text-white text-sm">Cửa Hàng FreshFruit</h4>
           <ul className="flex flex-col gap-3 text-xs text-slate-400 font-medium">
@@ -102,13 +101,13 @@ export const Footer: React.FC = () => {
               <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <span>Số 34, Thôn 4, Xã Phú Xuân, Tỉnh Đắk Lắk</span>
             </li>
-            <li className="text-[11px] text-amber-300 font-bold">
-              ★ Chỉ nhận giao hàng trong Xã Phú Xuân, Đắk Lắk
+            <li className="flex items-center gap-2.5">
+              <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Hotline: 0912 345 678</span>
             </li>
-            <li className="pt-1">
-              <Link to="/about" className="text-emerald-400 hover:text-emerald-300 underline font-semibold">
-                Xem bản đồ & giới thiệu cửa hàng →
-              </Link>
+            <li className="flex items-center gap-2.5">
+              <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span>Email: contact@freshfruit.vn</span>
             </li>
           </ul>
         </div>
