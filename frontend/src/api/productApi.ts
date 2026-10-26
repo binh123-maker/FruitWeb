@@ -9,6 +9,7 @@ export interface BackendProduct {
   price: number;
   sale_price: number | null;
   image: string | null;
+  images?: string[] | null;
   category_id: number | null;
   category_name: string | null;
   category_slug: string | null;
@@ -53,6 +54,7 @@ export interface ProductCreatePayload {
   price: number;
   sale_price?: number;
   image?: string;
+  images?: string[];
   category_id?: number;
   origin?: string;
   unit?: string;
@@ -72,6 +74,7 @@ export interface ProductUpdatePayload {
   price?: number;
   sale_price?: number;
   image?: string;
+  images?: string[];
   category_id?: number;
   origin?: string;
   unit?: string;
@@ -85,6 +88,12 @@ export interface ProductUpdatePayload {
 }
 
 export function mapBackendProductToFrontend(p: BackendProduct): Product {
+  const images = (p.images && p.images.length > 0)
+    ? p.images
+    : (p.image ? [p.image] : []);
+
+  const primaryImage = p.image || images[0] || 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
+
   return {
     id: String(p.id),
     name: p.name,
@@ -92,8 +101,8 @@ export function mapBackendProductToFrontend(p: BackendProduct): Product {
     description: p.description || '',
     price: p.price,
     salePrice: p.sale_price !== null && p.sale_price !== undefined ? p.sale_price : undefined,
-    image: p.image || 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80',
-    images: p.image ? [p.image] : [],
+    image: primaryImage,
+    images: images.length > 0 ? images : [primaryImage],
     category: p.category_slug || (p.category_id ? String(p.category_id) : ''),
     categoryName: p.category_name || '',
     origin: p.origin || 'Việt Nam',

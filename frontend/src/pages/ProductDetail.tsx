@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Product } from '../types';
 import { productService } from '../services/productService';
@@ -31,11 +31,29 @@ export const ProductDetail: React.FC = () => {
   const { isInWishlist, toggleWishlist } = useWishlist();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [isAddedSuccess, setIsAddedSuccess] = useState(false);
+
+  const galleryImages = useMemo(() => {
+    if (product?.images && product.images.length > 0) {
+      return product.images;
+    }
+    return product?.image ? [product.image] : [];
+  }, [product]);
+
+  useEffect(() => {
+    setSelectedImage(null);
+  }, [product?.id]);
+
+  const currentDisplayImage =
+    selectedImage ||
+    product?.image ||
+    galleryImages[0] ||
+    'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=800&q=80';
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -133,13 +151,14 @@ export const ProductDetail: React.FC = () => {
 
       {/* Main Product Showcase Card */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 bg-white p-6 sm:p-10 rounded-3xl border border-slate-100 shadow-xs">
-        {/* Left Column: Product Image Frame */}
-        <div className="flex flex-col gap-4">
+        {/* Left Column: Product Image Frame & Gallery Thumbnails */}
+        <div className="flex flex-col gap-3.5">
           <div className="relative aspect-square w-full rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group shadow-2xs">
             <img
-              src={product.image}
+              key={currentDisplayImage}
+              src={currentDisplayImage}
               alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-106"
+              className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-106"
               onError={(e) => {
                 const target = e.currentTarget;
                 const fallback =
@@ -180,6 +199,45 @@ export const ProductDetail: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Multiple Images Gallery Thumbnails */}
+          {galleryImages.length > 1 && (
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-1 pt-0.5">
+              {galleryImages.map((imgUrl, idx) => {
+                const isSelected = currentDisplayImage === imgUrl;
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setSelectedImage(imgUrl)}
+                    className={`relative w-18 h-18 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-slate-50 border-2 transition-all duration-200 shrink-0 cursor-pointer focus:outline-none ${
+                      isSelected
+                        ? 'border-emerald-600 ring-2 ring-emerald-500/20 scale-[1.03] shadow-xs'
+                        : 'border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100'
+                    }`}
+                    aria-label={`Xem ảnh góc ${idx + 1}`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`${product.name} - góc chụp ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        const fallback =
+                          'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80';
+                        if (!target.src.includes('1610832958506')) {
+                          target.src = fallback;
+                        }
+                      }}
+                    />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-emerald-900/10 pointer-events-none" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Right Column: Product Info & Actions */}

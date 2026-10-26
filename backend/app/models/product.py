@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import String, Text, Numeric, Integer, Float, Boolean, ForeignKey, DateTime
+from sqlalchemy import String, Text, Numeric, Integer, Float, Boolean, ForeignKey, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -17,6 +17,7 @@ class Product(Base):
     price: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False)
     sale_price: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     image: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    images: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, default=list)
     origin: Mapped[str | None] = mapped_column(String(100), default="", nullable=True)
     unit: Mapped[str] = mapped_column(String(50), default="kg", nullable=False)
     stock: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

@@ -30,6 +30,7 @@ export const AdminProducts: React.FC = () => {
     stock: 50,
     origin: 'Việt Nam',
     image: '',
+    secondaryImage: '',
     description: '',
     isOrganic: true,
     isBestSeller: false,
@@ -58,6 +59,7 @@ export const AdminProducts: React.FC = () => {
   const handleOpenModal = (product?: Product) => {
     if (product) {
       setEditingProduct(product);
+      const secondary = (product.images && product.images.length > 1) ? product.images[1] : '';
       setFormData({
         name: product.name,
         slug: product.slug,
@@ -68,6 +70,7 @@ export const AdminProducts: React.FC = () => {
         stock: product.stock,
         origin: product.origin,
         image: product.image,
+        secondaryImage: secondary,
         description: product.description,
         isOrganic: !!product.isOrganic,
         isBestSeller: !!product.isBestSeller,
@@ -84,6 +87,7 @@ export const AdminProducts: React.FC = () => {
         stock: 50,
         origin: 'Việt Nam',
         image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&w=600&q=80',
+        secondaryImage: 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=600&q=80',
         description: 'Trái cây tươi ngon đạt chuẩn VietGAP...',
         isOrganic: true,
         isBestSeller: false,
@@ -99,12 +103,22 @@ export const AdminProducts: React.FC = () => {
       return;
     }
 
+    const imageList: string[] = [];
+    if (formData.image.trim()) {
+      imageList.push(formData.image.trim());
+    }
+    if (formData.secondaryImage.trim()) {
+      imageList.push(formData.secondaryImage.trim());
+    }
+
     setIsSubmitting(true);
     try {
       if (editingProduct) {
         await productService.updateProduct(editingProduct.id, {
           ...formData,
           name: formData.name.trim(),
+          image: formData.image.trim(),
+          images: imageList.length > 0 ? imageList : undefined,
           salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
         });
         showToast('Cập nhật sản phẩm thành công!', 'success');
@@ -113,6 +127,8 @@ export const AdminProducts: React.FC = () => {
           ...formData,
           name: formData.name.trim(),
           slug: formData.name.trim().toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, ''),
+          image: formData.image.trim(),
+          images: imageList.length > 0 ? imageList : undefined,
           salePrice: formData.salePrice > 0 ? formData.salePrice : undefined,
           rating: 5,
           reviewCount: 0,
@@ -204,7 +220,14 @@ export const AdminProducts: React.FC = () => {
                     />
                     <div className="flex flex-col min-w-0">
                       <span className="font-extrabold text-slate-900 truncate">{p.name}</span>
-                      <span className="text-[11px] text-slate-400">{p.origin || 'Việt Nam'}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[11px] text-slate-400">{p.origin || 'Việt Nam'}</span>
+                        {p.images && p.images.length > 1 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60 leading-none">
+                            {p.images.length} ảnh
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="py-3 px-4 text-slate-600 font-semibold">{p.categoryName || p.category}</td>
@@ -303,11 +326,59 @@ export const AdminProducts: React.FC = () => {
             onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
           />
 
-          <Input
-            label="URL Hình ảnh"
-            value={formData.image}
-            onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="URL Hình ảnh chính (Bắt buộc)"
+              placeholder="https://..."
+              required
+              value={formData.image}
+              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+            />
+            <Input
+              label="URL Hình ảnh phụ (Gallery chi tiết)"
+              placeholder="https://..."
+              value={formData.secondaryImage}
+              onChange={(e) => setFormData({ ...formData, secondaryImage: e.target.value })}
+            />
+          </div>
+
+          {(formData.image || formData.secondaryImage) && (
+            <div className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80">
+              <span className="text-[11px] font-bold text-slate-500 shrink-0">Xem trước:</span>
+              <div className="flex items-center gap-2">
+                {formData.image && (
+                  <div className="relative group">
+                    <img
+                      src={formData.image}
+                      alt="Ảnh chính"
+                      className="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-white"
+                      onError={(e) => {
+                        e.currentTarget.style.opacity = '0.3';
+                      }}
+                    />
+                    <span className="absolute bottom-0 inset-x-0 text-[9px] font-black text-center bg-slate-900/70 text-white rounded-b-lg">
+                      Chính
+                    </span>
+                  </div>
+                )}
+                {formData.secondaryImage && (
+                  <div className="relative group">
+                    <img
+                      src={formData.secondaryImage}
+                      alt="Ảnh phụ"
+                      className="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-white"
+                      onError={(e) => {
+                        e.currentTarget.style.opacity = '0.3';
+                      }}
+                    />
+                    <span className="absolute bottom-0 inset-x-0 text-[9px] font-black text-center bg-slate-900/70 text-white rounded-b-lg">
+                      Phụ
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-6 pt-1">
             <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">

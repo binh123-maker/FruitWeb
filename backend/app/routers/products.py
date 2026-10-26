@@ -24,6 +24,8 @@ def build_product_response(product: Product) -> ProductResponse:
     if product.category:
         res.category_name = product.category.name
         res.category_slug = product.category.slug
+    if not res.images or len(res.images) == 0:
+        res.images = [product.image] if product.image else []
     return res
 
 
@@ -160,13 +162,17 @@ def create_product(
         # Append unique timestamp suffix if slug exists
         slug = f"{slug}-{int(db.query(Product).count()) + 1}"
 
+    images = payload.images or ([payload.image] if payload.image else [])
+    primary_image = payload.image or (images[0] if images else None)
+
     product = Product(
         name=payload.name,
         slug=slug,
         description=payload.description,
         price=payload.price,
         sale_price=payload.sale_price,
-        image=payload.image,
+        image=primary_image,
+        images=images,
         category_id=payload.category_id,
         origin=payload.origin or "",
         unit=payload.unit or "kg",
@@ -236,6 +242,10 @@ def update_product(
         product.sale_price = payload.sale_price
     if payload.image is not None:
         product.image = payload.image
+    if payload.images is not None:
+        product.images = payload.images
+        if payload.images and (payload.image is None):
+            product.image = payload.images[0]
     if payload.origin is not None:
         product.origin = payload.origin
     if payload.unit is not None:

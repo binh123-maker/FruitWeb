@@ -11,6 +11,7 @@ class ProductBase(BaseModel):
     price: float = Field(..., ge=0)
     sale_price: Optional[float] = Field(None, ge=0)
     image: Optional[str] = None
+    images: Optional[List[str]] = None
     category_id: Optional[int] = None
     origin: Optional[str] = ""
     unit: str = "kg"
@@ -34,6 +35,7 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = Field(None, ge=0)
     sale_price: Optional[float] = Field(None, ge=0)
     image: Optional[str] = None
+    images: Optional[List[str]] = None
     category_id: Optional[int] = None
     origin: Optional[str] = None
     unit: Optional[str] = None
@@ -54,6 +56,7 @@ class ProductResponse(BaseModel):
     price: float
     sale_price: Optional[float] = None
     image: Optional[str] = None
+    images: Optional[List[str]] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
     category_slug: Optional[str] = None

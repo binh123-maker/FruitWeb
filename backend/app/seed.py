@@ -554,6 +554,7 @@ def seed_products(db):
             price=data["price"],
             sale_price=data.get("sale_price"),
             image=data.get("image"),
+            images=data.get("images", [data["image"]] if data.get("image") else []),
             origin=data.get("origin", "Việt Nam"),
             unit=data.get("unit", "kg"),
             stock=data.get("stock", 0),
