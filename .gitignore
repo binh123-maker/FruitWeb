@@ -49,3 +49,6 @@ venv/
 .venv/
 alembic.log
 
+# Keys and credentials
+*.pem
+*.key
